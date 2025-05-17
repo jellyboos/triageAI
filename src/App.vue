@@ -3,13 +3,11 @@ import Navigation from './components/Navigation.vue'
 </script>
 
 <template>
-  <Navigation />
+  <div class="min-h-screen w-full flex items-center justify-center">
+    <Navigation />
+  </div>
 </template>
 
 <style>
-.app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
+/* Remove any conflicting styles */
 </style>
