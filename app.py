@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 from model import generate_triage
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -20,15 +21,29 @@ def post_data():
 
 @app.route('/api/patients', methods=['GET', 'POST'])
 def patient_data():
-    print("Received request to /api/patients") # Debug log
     if request.method == 'POST':
         post_data = request.get_json()
-        print("Received POST data:", post_data) # Debug log
+        
+        # Personal Info
         firstName = post_data.get('firstName')
         lastName = post_data.get('lastName')
         age = post_data.get('age')
+        timeEntered = datetime.now().strftime("%H:%M")
+        # dateOfVisit = datetime.now().strftime("%Y-%m-%d")
+        # dob = post_data.get('dob')
+        # phoneNumber = post_data.get('phoneNumber')
+        # allergies = post_data.get('allergies')
+        # meds = post_data.get('meds')
+        
+        # # Vitals
+        # temp = post_data.get('temp')
+        # pulse = post_data.get('pulse')
+        # respiration = post_data.get('respiration')
+        # bloodPressure = post_data.get('bloodPressure')
+
+        # Symptoms
         # Take Symptoms and generate ESI
-        # model_response = generate_triage(post_data.get('symptoms')).split(" - ")
+        # model_response = generate_triage(temp, pulse, respiration, bloodPressure, symptoms).split(" - ")
         # esi_number = model_response[0]
         # esi_explanation = model_response[1]
         # print(esi_number, esi_explanation)
