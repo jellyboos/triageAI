@@ -13,7 +13,7 @@ if not api_key:
 client = genai.Client(api_key=api_key)
 
 def generate_triage(symptoms):
-    response = client.models.generate_content(model = 'gemini-2.0-flash', contents = f"Cateogrize the following symptoms into a triage level using the the Emergency Severity Index (ESI): {symptoms}. Just display the ESI number.")
+    response = client.models.generate_content(model = 'gemini-2.0-flash', contents = f"Cateogrize the following symptoms into a triage level using the the Emergency Severity Index (ESI): {symptoms}. Just display the ESI number and a short explanation for the category in the format: [ESI Number] - [Explanation]")
     return response.text
 
 print(generate_triage("trouble breathing, chest pain"))
