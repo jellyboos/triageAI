@@ -24,5 +24,7 @@ const currentComponent = computed(() => {
 </script>
 
 <template>
-  <component :is="currentComponent" @navigate="navigateTo" />
+  <div class="min-h-screen min-w-screen">
+    <component :is="currentComponent" @navigate="navigateTo" />
+  </div>
 </template>
