@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 // Emit events to parent component for navigation
 const emit = defineEmits(['navigate'])
@@ -80,6 +80,42 @@ const getPriorityColor = (priority) => {
       return 'bg-gray-100 text-gray-800'
   }
 }
+
+// Message handling
+const message = ref('')
+const serverResponse = ref('')
+
+const sendMessage = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: message.value }),
+    })
+    const data = await response.json()
+    serverResponse.value = data.response
+  } catch (error) {
+    console.error('Error:', error)
+    serverResponse.value = 'Error communicating with server'
+  }
+}
+
+const getMessage = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/message')
+    const data = await response.json()
+    serverResponse.value = data.message
+  } catch (error) {
+    console.error('Error:', error)
+    serverResponse.value = 'Error communicating with server'
+  }
+}
+
+onMounted(() => {
+  getMessage()
+})
 </script>
 
 <template>
@@ -87,6 +123,28 @@ const getPriorityColor = (priority) => {
   <div class="min-h-screen min-w-screen">
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Message testing section -->
+      <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+        <h3 class="text-lg font-semibold mb-4">Message Testing</h3>
+        <div class="flex gap-4 mb-4">
+          <input
+            v-model="message"
+            type="text"
+            placeholder="Type a message"
+            class="flex-1 px-4 py-2 border rounded-md"
+          />
+          <button
+            @click="sendMessage"
+            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Send
+          </button>
+        </div>
+        <div v-if="serverResponse" class="p-3 bg-white rounded-md shadow">
+          Server response: {{ serverResponse }}
+        </div>
+      </div>
+
       <!-- Header section with back button and title -->
       <div class="flex justify-between items-center mb-8">
         <button
@@ -99,13 +157,13 @@ const getPriorityColor = (priority) => {
       </div>
 
       <!-- Patient cards container - uses flexbox with wrapping -->
-      <div class="flex flex-wrap gap-4 flex-col">
+      <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
         <!-- Individual patient card -->
         <div
           v-for="patient in patients"
           :key="patient.id"
           @click="openPatientDetail(patient)"
-          class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow flex-1 min-w-[300px] max-w-[400px]"
+          class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow flex-1 min-w-[50em] min-h-[10em]"
         >
           <!-- Card header with name and status -->
           <div class="flex justify-between items-start">
