@@ -28,3 +28,29 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Shell history files
+.bash_history
+.zsh_history
+.history
+.histfile
+.hist
+.history.*
+
+# PowerShell history
+Microsoft.PowerShell_history
+PowerShell_history.txt
+
+# Node history
+.node_repl_history
+
+# Python history
+.python_history
+.history.python
+
+# VS Code history
+.history/
+
+# General history files
+*_history
+*_history.*
