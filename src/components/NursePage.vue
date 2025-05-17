@@ -99,13 +99,13 @@ const getPriorityColor = (priority) => {
       </div>
 
       <!-- Patient cards container - uses flexbox with wrapping -->
-      <div class="flex flex-wrap gap-4 flex-col">
+      <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
         <!-- Individual patient card -->
         <div
           v-for="patient in patients"
           :key="patient.id"
           @click="openPatientDetail(patient)"
-          class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow flex-1 min-w-[300px] max-w-[400px]"
+          class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em]"
         >
           <!-- Card header with name and status -->
           <div class="flex justify-between items-start">
