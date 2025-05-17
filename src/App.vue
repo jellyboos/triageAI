@@ -21,8 +21,9 @@ const navigateTo = (page) => {
 
 <style>
 .app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+  min-height: 100vh;
+  min-width: 100vw;
+  margin: 0;
+  padding: 0;
 }
 </style>
