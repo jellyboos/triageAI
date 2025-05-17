@@ -1,58 +1,107 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
 const emit = defineEmits(['navigate'])
-const message = ref('')
-const inputData = ref('')
 
-const goBack = () => {
-  emit('navigate', 'landing')
-}
+const patient = ref({
+  firstName: '',
+  lastName: '',
+  age: ''
+})
 
-const fetchData = async () => {
+const loading = ref(false)
+const error = ref(null)
+const success = ref(false)
+
+const submitForm = async () => {
+  loading.value = true
+  error.value = null
+  success.value = false
+
   try {
-    const response = await fetch('http://localhost:5000/api/data')
-    const data = await response.json()
-    message.value = data.message
-  } catch (error) {
-    console.error('Error:', error)
-  }
-}
-
-const sendData = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/api/data', {
+    const response = await fetch('http://localhost:5000/api/patients', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: inputData.value }),
+      body: JSON.stringify(patient.value)
     })
+
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`)
+    }
+
     const data = await response.json()
-    message.value = `Received: ${JSON.stringify(data)}`
-  } catch (error) {
-    console.error('Error:', error)
+    console.log('Patient data submitted successfully:', data)
+    success.value = true
+
+    // Reset form
+    patient.value = {
+      firstName: '',
+      lastName: '',
+      age: ''
+    }
+  } catch (err) {
+    error.value = err.message || 'Failed to submit patient data'
+    console.error('Error submitting patient data:', err)
+  } finally {
+    loading.value = false
   }
 }
 
-onMounted(() => {
-  fetchData()
-})
+const goBack = () => {
+  emit('navigate', 'landing')
+}
 </script>
 
 <template>
   <div class="page">
     <button class="back-button" @click="goBack">← Back to Main</button>
-    <h2>Patient Page</h2>
+    <h2>Patient Information</h2>
 
-    <div class="data-section">
-      <p>Message from server: {{ message }}</p>
-
-      <div class="input-group">
-        <input v-model="inputData" placeholder="Enter some text" />
-        <button @click="sendData">Send to Server</button>
+    <form @submit.prevent="submitForm" class="patient-form">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input
+          id="firstName"
+          v-model="patient.firstName"
+          type="text"
+          required
+          placeholder="Enter first name"
+        >
       </div>
-    </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input
+          id="lastName"
+          v-model="patient.lastName"
+          type="text"
+          required
+          placeholder="Enter last name"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="age">Age</label>
+        <input
+          id="age"
+          v-model="patient.age"
+          type="number"
+          required
+          min="0"
+          max="120"
+          placeholder="Enter age"
+        >
+      </div>
+
+      <div v-if="error" class="error-message">{{ error }}</div>
+      <div v-if="success" class="success-message">Patient data submitted successfully!</div>
+
+      <button type="submit" class="submit-button" :disabled="loading">
+        {{ loading ? 'Submitting...' : 'Submit' }}
+      </button>
+    </form>
   </div>
 </template>
 
@@ -60,6 +109,8 @@ onMounted(() => {
 .page {
   padding: 2rem;
   text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .back-button {
@@ -72,27 +123,62 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.data-section {
+.patient-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   margin-top: 2rem;
+  text-align: left;
 }
 
-.input-group {
-  margin-top: 1rem;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-weight: bold;
 }
 
 input {
   padding: 0.5rem;
-  margin-right: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 1rem;
 }
 
-button {
-  background-color: #4caf50;
+.submit-button {
+  background-color: #4CAF50;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 1rem;
+  margin-top: 1rem;
+}
+
+.submit-button:hover {
+  background-color: #45a049;
+}
+
+.submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ff0000;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  color: #4CAF50;
+  margin-top: 1rem;
+  font-size: 0.9rem;
 }
 </style>
+
+
