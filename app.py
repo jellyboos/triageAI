@@ -1,9 +1,15 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
+from pymongo import MongoClient
 
 app = Flask(__name__)
 # Enable CORS for all routes with all origins
 CORS(app)
+
+# MongoDB connection set up
+client = MongoClient("mongodb://localhost:27017/")
+db = client["patientdb"]
+patients_collection = db["patient"]
 
 @app.route('/')
 def LandingPage():
