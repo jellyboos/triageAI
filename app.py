@@ -29,6 +29,14 @@ def patient_data():
         return jsonify({"status": "success", "message": "Patient data received!"})
     return jsonify({"status": "success", "message": "Patient data received!"})
 
+@app.route('/api/message', methods=['GET', 'POST'])
+def handle_message():
+    if request.method == 'POST':
+        data = request.get_json()
+        message = data.get('message', '')
+        return jsonify({"response": f"Server received: {message}"})
+    return jsonify({"message": "Hello from Flask!"})
+
 if __name__ == "__main__":
     print("Starting Flask server on port 5000...") # Debug log
     app.run(debug=True, port=5000, host='0.0.0.0')
