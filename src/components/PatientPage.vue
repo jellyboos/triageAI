@@ -50,6 +50,36 @@ const submitForm = async () => {
 const goBack = () => {
   emit('navigate', 'landing')
 }
+
+const fetchData = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/data')
+    const data = await response.json()
+    message.value = data.message
+  } catch (error) {
+    console.error('Error:', error)
+  }
+}
+
+const sendData = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: inputData.value }),
+    })
+    const data = await response.json()
+    message.value = `Received: ${JSON.stringify(data)}`
+  } catch (error) {
+    console.error('Error:', error)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <template>

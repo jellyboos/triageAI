@@ -54,3 +54,11 @@ PowerShell_history.txt
 # General history files
 *_history
 *_history.*
+
+# Environment
+.env
+env/
+venv/
+
+__pycache__/
+*.pyc

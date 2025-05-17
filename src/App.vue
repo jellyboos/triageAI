@@ -1,29 +1,9 @@
 <script setup>
-import { ref } from 'vue'
-import LandingPage from './components/LandingPage.vue'
-import PatientPage from './components/PatientPage.vue'
-import NursePage from './components/NursePage.vue'
-
-const currentPage = ref('landing')
-
-const navigateTo = (page) => {
-  currentPage.value = page
-}
+import Navigation from './components/Navigation.vue'
 </script>
 
 <template>
-  <div class="app">
-    <component
-      :is="
-        currentPage === 'landing'
-          ? LandingPage
-          : currentPage === 'patient'
-            ? PatientPage
-            : NursePage
-      "
-      @navigate="navigateTo"
-    />
-  </div>
+  <Navigation />
 </template>
 
 <style>
