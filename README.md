@@ -1,35 +1,50 @@
-# Triage_AI
+# Party 4 U
 
-This template should help get you started developing with Vue 3 in Vite.
+A Vue.js application for party planning and management.
 
-## Recommended IDE Setup
+## Installation
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+1. Clone the repository:
 
-## Customize configuration
+```bash
+git clone https://github.com/yourusername/party-4-u.git
+cd party-4-u
+```
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+2. Install dependencies:
 
-## Project Setup
-
-```sh
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+3. Start the development server:
 
-```sh
+```bash
 npm run dev
 ```
 
-### Compile and Minify for Production
+4. Build for production:
 
-```sh
+```bash
 npm run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Development
 
-```sh
-npm run lint
-```
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build locally
+- `npm run lint` - Run ESLint
+- `npm run test` - Run tests
+
+## Tech Stack
+
+- Vue 3
+- Vite
+- TypeScript
+- Tailwind CSS
+
+## Requirements
+
+- Node.js 16.x or higher
+- npm 7.x or higher
