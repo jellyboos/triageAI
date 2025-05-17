@@ -1,9 +1,9 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
+from model import generate_triage
 from pymongo import MongoClient
 
 app = Flask(__name__)
-# Enable CORS for all routes with all origins
 CORS(app)
 
 # MongoDB connection set up
@@ -33,6 +33,12 @@ def patient_data():
         firstName = post_data.get('firstName')
         lastName = post_data.get('lastName')
         age = post_data.get('age')
+        # Take Symptoms and generate ESI
+        # model_response = generate_triage(post_data.get('symptoms')).split(" - ")
+        # esi_number = model_response[0]
+        # esi_explanation = model_response[1]
+        # print(esi_number, esi_explanation)
+        # Add user to database
         return jsonify({"status": "success", "message": "Patient data received!"})
     return jsonify({"status": "success", "message": "Patient data received!"})
 
@@ -45,5 +51,5 @@ def handle_message():
     return jsonify({"message": "Hello from Flask!"})
 
 if __name__ == "__main__":
-    print("Starting Flask server on port 5000...") # Debug log
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    print("Starting Flask server on port 3000...") # Debug log
+    app.run(debug=True, port=3000, host='0.0.0.0')

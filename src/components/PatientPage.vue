@@ -20,7 +20,7 @@ const submitForm = async () => {
 
   try {
     console.log('Sending patient data:', patient.value)
-    const response = await fetch('http://localhost:5000/api/patients', {
+    const response = await fetch('http://localhost:3000/api/patients', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
