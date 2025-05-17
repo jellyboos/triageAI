@@ -1,10 +1,16 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 from model import generate_triage
+from pymongo import MongoClient
 from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
+
+# MongoDB connection set up
+client = MongoClient("mongodb://localhost:27017/")
+db = client["patientdb"]
+patients_collection = db["patient"]
 
 @app.route('/')
 def LandingPage():
