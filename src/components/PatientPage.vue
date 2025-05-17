@@ -19,6 +19,7 @@ const submitForm = async () => {
   success.value = false
 
   try {
+    console.log('Sending patient data:', patient.value)
     const response = await fetch('http://localhost:5000/api/patients', {
       method: 'POST',
       headers: {
@@ -27,12 +28,13 @@ const submitForm = async () => {
       body: JSON.stringify(patient.value)
     })
 
+    console.log('Response status:', response.status)
     if (!response.ok) {
       throw new Error(`Server responded with status: ${response.status}`)
     }
 
     const data = await response.json()
-    console.log('Patient data submitted successfully:', data)
+    console.log('Response data:', data)
     success.value = true
 
     // Reset form

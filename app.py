@@ -17,5 +17,18 @@ def post_data():
     data = request.json
     return jsonify({"received": data, "status": "success"})
 
-if __name__ == "__main__":  # Fixed the string comparison
-    app.run(debug=True)
+@app.route('/api/patients', methods=['GET', 'POST'])
+def patient_data():
+    print("Received request to /api/patients") # Debug log
+    if request.method == 'POST':
+        post_data = request.get_json()
+        print("Received POST data:", post_data) # Debug log
+        firstName = post_data.get('firstName')
+        lastName = post_data.get('lastName')
+        age = post_data.get('age')
+        return jsonify({"status": "success", "message": "Patient data received!"})
+    return jsonify({"status": "success", "message": "Patient data received!"})
+
+if __name__ == "__main__":
+    print("Starting Flask server on port 5000...") # Debug log
+    app.run(debug=True, port=5000, host='0.0.0.0')
