@@ -11,14 +11,15 @@ const patient = ref({
 
 const loading = ref(false)
 const error = ref(null)
+const success = ref(false)
 
 const submitForm = async () => {
   loading.value = true
   error.value = null
+  success.value = false
 
   try {
-    // Send data to backend API
-    const response = await fetch('/api/patients', {
+    const response = await fetch('http://localhost:5000/api/patients', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,6 +33,7 @@ const submitForm = async () => {
 
     const data = await response.json()
     console.log('Patient data submitted successfully:', data)
+    success.value = true
 
     // Reset form
     patient.value = {
@@ -50,36 +52,6 @@ const submitForm = async () => {
 const goBack = () => {
   emit('navigate', 'landing')
 }
-
-const fetchData = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/api/data')
-    const data = await response.json()
-    message.value = data.message
-  } catch (error) {
-    console.error('Error:', error)
-  }
-}
-
-const sendData = async () => {
-  try {
-    const response = await fetch('http://localhost:5000/api/data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message: inputData.value }),
-    })
-    const data = await response.json()
-    message.value = `Received: ${JSON.stringify(data)}`
-  } catch (error) {
-    console.error('Error:', error)
-  }
-}
-
-onMounted(() => {
-  fetchData()
-})
 </script>
 
 <template>
@@ -124,6 +96,7 @@ onMounted(() => {
       </div>
 
       <div v-if="error" class="error-message">{{ error }}</div>
+      <div v-if="success" class="success-message">Patient data submitted successfully!</div>
 
       <button type="submit" class="submit-button" :disabled="loading">
         {{ loading ? 'Submitting...' : 'Submit' }}
@@ -190,14 +163,22 @@ input {
   background-color: #45a049;
 }
 
+.submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
 .error-message {
   color: #ff0000;
   margin-top: 1rem;
   font-size: 0.9rem;
 }
 
-.submit-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+.success-message {
+  color: #4CAF50;
+  margin-top: 1rem;
+  font-size: 0.9rem;
 }
 </style>
+
+
