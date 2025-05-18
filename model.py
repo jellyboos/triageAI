@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from io import BytesIO
 from PIL import Image
+import base64
 
 # Load environment variables
 load_dotenv()

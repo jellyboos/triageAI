@@ -44,42 +44,26 @@ def post_data():
 @app.route('/api/patients', methods=['GET', 'POST'])
 def patient_data():
     if request.method == 'POST':
-        post_data = request.get_json()
-        
-        # Create patient document
-        patient_doc = {
-            # Personal Information
-            'firstName': post_data.get('firstName'),
-            'lastName': post_data.get('lastName'),
-            'dateOfVisit': datetime.now().strftime("%Y-%m-%d"),
-            'dateOfBirth': post_data.get('dateOfBirth'),
-            'phoneNumber': post_data.get('phoneNumber'),
+        try:
+            post_data = request.get_json()
+            print("Received data:", post_data)  # Debug print
             
-            # Medical Information/Vitals
-            'vitals': {
-                'temperature': post_data.get('vitals', {}).get('temperature'),
-                'pulse': post_data.get('vitals', {}).get('pulse'),
-                'respirationRate': post_data.get('vitals', {}).get('respirationRate'),
-                'bloodPressure': post_data.get('vitals', {}).get('bloodPressure')
-            },
+            # Personal Info
+            firstName = post_data.get('firstName')
+            lastName = post_data.get('lastName')
+            age = post_data.get('age')
+            timeEntered = datetime.now().strftime("%H:%M")
+            dateOfVisit = datetime.now().strftime("%Y-%m-%d")
             
-            # Allergies and Medications
-            'allergies': {
-                'selected': post_data.get('allergies', {}).get('selected', []),
-                'other': post_data.get('allergies', {}).get('other')
-            },
-            'medications': {
-                'current': post_data.get('medications', {}).get('current')
-            },
-            
-            # Medical History
-            'medicalHistory': {
-                'substanceUse': post_data.get('medicalHistory', {}).get('substanceUse', {}),
-                'familyHistory': post_data.get('medicalHistory', {}).get('familyHistory', {}),
-                'surgeries': post_data.get('medicalHistory', {}).get('surgeries'),
-                'complications': post_data.get('medicalHistory', {}).get('complications')
-            },
-            
+            # Vitals
+            bloodPressure = None
+            if post_data.get('bloodPressure'):
+                try:
+                    bloodPressure = str(post_data['bloodPressure']['systolic']) + "/" + str(post_data['bloodPressure']['diastolic'])
+                except Exception as e:
+                    print("Error processing blood pressure:", str(e))
+                    bloodPressure = "N/A"
+
             # Symptoms
             'symptoms': post_data.get('symptoms', {}),
             
@@ -116,17 +100,19 @@ def patient_data():
             
             return jsonify({
                 "status": "success",
-                "message": "Patient data received and stored!",
+                "message": "Patient data received!",
+                "esi": esi_number,
+                "explanation": esi_explanation
                 "id": patient_id
-            }), 201
-            
+            })
+
         except Exception as e:
-            print(f"Error storing patient data: {str(e)}")
+            print("Error processing request:", str(e))
             return jsonify({
                 "status": "error",
                 "message": f"Failed to store patient data: {str(e)}"
             }), 500
-            
+
     # GET method
     elif request.method == 'GET':
         try:
@@ -214,5 +200,5 @@ def update_patient(patient_id):
         }), 500
 
 if __name__ == "__main__":
-    print("Starting Flask server on port 3000...")
+    print("Starting Flask server on port 3000...") # Debug log
     app.run(debug=True, port=3000, host='0.0.0.0')
