@@ -56,10 +56,15 @@ def patient_data():
             dateOfVisit = datetime.now().strftime("%Y-%m-%d")
             
             # Vitals
+            temperature = post_data.get('vitals').get('temperature')
+            pulse = post_data.get('vitals').get('pulse')
+            respiration = post_data.get('vitals').get('respirationRate')
             bloodPressure = None
-            if post_data.get('bloodPressure'):
+            if post_data.get('vitals').get('bloodPressure'):
                 try:
-                    bloodPressure = str(post_data['bloodPressure']['systolic']) + "/" + str(post_data['bloodPressure']['diastolic'])
+                    bp_systolic = post_data.get('vitals').get('bloodPressure')['systolic']
+                    bp_diastolic = post_data.get('vitals').get('bloodPressure')['diastolic']
+                    bloodPressure = str(bp_systolic) + "/" + str(bp_diastolic)
                 except Exception as e:
                     print("Error processing blood pressure:", str(e))
                     bloodPressure = "N/A"
