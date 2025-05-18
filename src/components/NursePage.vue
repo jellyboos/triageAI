@@ -212,30 +212,32 @@ const handleNotificationResponse = (confirmed) => {
   <!-- Main container - takes full viewport height -->
   <div class="min-h-screen min-w-screen relative">
     <!-- Notification Box -->
-    <div
-      v-if="showNotification"
-      class="fixed right-4 top-4 bg-white rounded-lg shadow-lg p-4 w-80 border-l-4 border-blue-500 z-50"
-    >
-      <div class="flex items-start">
-        <div class="flex-1">
-          <p class="text-gray-800 font-medium">{{ notificationMessage }}</p>
-        </div>
-        <div class="flex gap-2 mt-4">
-          <button
-            @click="handleNotificationResponse(true)"
-            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Confirm
-          </button>
-          <button
-            @click="handleNotificationResponse(false)"
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
+    <Transition name="notification">
+      <div
+        v-if="showNotification"
+        class="fixed right-4 top-4 bg-white rounded-lg shadow-lg p-4 w-80 border-l-4 border-blue-500 z-50"
+      >
+        <div class="flex items-start">
+          <div class="flex-1">
+            <p class="text-gray-800 font-medium">{{ notificationMessage }}</p>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button
+              @click="handleNotificationResponse(true)"
+              class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              @click="handleNotificationResponse(false)"
+              class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -287,7 +289,7 @@ const handleNotificationResponse = (confirmed) => {
           <template #item="{ element }">
             <div
               @click="openPatientDetail(element)"
-              class="bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
+              class="draggable-item bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
             >
               <!-- Card header with name and status -->
               <div class="flex justify-between items-start">
@@ -302,7 +304,7 @@ const handleNotificationResponse = (confirmed) => {
                 <span
                   :class="[
                     getStatusColor(element.status),
-                    'px-2 py-1 rounded-full text-xs font-medium',
+                    'status-badge px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
                   {{ element.status }}
@@ -313,7 +315,7 @@ const handleNotificationResponse = (confirmed) => {
                 <span
                   :class="[
                     getPriorityColor(element.priority),
-                    'px-2 py-1 rounded-full text-xs font-medium',
+                    'priority-badge px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
                   Priority {{ element.priority }}
@@ -327,142 +329,150 @@ const handleNotificationResponse = (confirmed) => {
       </div>
 
       <!-- Patient Detail Modal -->
-      <div
-        v-if="selectedPatient"
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50"
-      >
-        <!-- Modal content -->
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8">
-          <!-- Modal header with close button -->
-          <div class="flex justify-between items-start mb-8">
-            <div class="flex items-center gap-6">
-              <div>
-                <h3 class="text-3xl font-bold text-gray-900">{{ selectedPatient.name }}</h3>
-                <p class="text-lg text-gray-500 mt-1">
-                  Check-in: {{ new Date(selectedPatient.checkInTime).toLocaleString() }}
-                </p>
-              </div>
-              <div class="flex gap-3">
-                <span
-                  v-if="!isEditing"
-                  :class="[
-                    getStatusColor(selectedPatient.status),
-                    'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
-                  ]"
-                >
-                  {{ selectedPatient.status }}
-                </span>
-                <select
-                  v-else
-                  v-model="editedStatus"
-                  class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
-                <span
-                  v-if="!isEditing"
-                  :class="[
-                    getPriorityColor(selectedPatient.priority),
-                    'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
-                  ]"
-                >
-                  Priority {{ selectedPatient.priority }}
-                </span>
-                <select
-                  v-else
-                  v-model="editedPriority"
-                  class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option
-                    v-for="option in priorityOptions"
-                    :key="option.value"
-                    :value="option.value"
+      <Transition name="modal">
+        <div
+          v-if="selectedPatient"
+          class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50"
+        >
+          <!-- Modal content -->
+          <Transition name="modal-content">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8">
+              <!-- Modal header with close button -->
+              <div class="flex justify-between items-start mb-8">
+                <div class="flex items-center gap-6">
+                  <div>
+                    <h3 class="text-3xl font-bold text-gray-900">{{ selectedPatient.name }}</h3>
+                    <p class="text-lg text-gray-500 mt-1">
+                      Check-in: {{ new Date(selectedPatient.checkInTime).toLocaleString() }}
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span
+                      v-if="!isEditing"
+                      :class="[
+                        getStatusColor(selectedPatient.status),
+                        'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
+                      ]"
+                    >
+                      {{ selectedPatient.status }}
+                    </span>
+                    <select
+                      v-else
+                      v-model="editedStatus"
+                      class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option
+                        v-for="option in statusOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
+                    </select>
+                    <span
+                      v-if="!isEditing"
+                      :class="[
+                        getPriorityColor(selectedPatient.priority),
+                        'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
+                      ]"
+                    >
+                      Priority {{ selectedPatient.priority }}
+                    </span>
+                    <select
+                      v-else
+                      v-model="editedPriority"
+                      class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option
+                        v-for="option in priorityOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    v-if="!isEditing"
+                    @click="startEditing(selectedPatient)"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                   >
-                    {{ option.label }}
-                  </option>
-                </select>
+                    Edit
+                  </button>
+                  <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="flex gap-2">
-              <button
-                v-if="!isEditing"
-                @click="startEditing(selectedPatient)"
-                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Edit
-              </button>
-              <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
-                <span class="sr-only">Close</span>
-                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
 
-          <!-- Modal body with patient details -->
-          <div class="grid grid-cols-1 gap-8">
-            <!-- Symptoms -->
-            <div>
-              <div class="flex justify-between items-center mb-4">
-                <h4 class="text-2xl font-semibold text-gray-700">Symptoms</h4>
-              </div>
-              <div
-                v-if="!isEditing"
-                class="text-lg text-gray-900 bg-gray-50 p-6 rounded-lg min-h-[100px]"
-              >
-                {{ selectedPatient.symptoms }}
-              </div>
-              <textarea
-                v-else
-                v-model="editedSymptoms"
-                class="w-full text-lg text-gray-900 bg-gray-50 p-6 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px]"
-                rows="4"
-              ></textarea>
-            </div>
+              <!-- Modal body with patient details -->
+              <div class="grid grid-cols-1 gap-8">
+                <!-- Symptoms -->
+                <div>
+                  <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-2xl font-semibold text-gray-700">Symptoms</h4>
+                  </div>
+                  <div
+                    v-if="!isEditing"
+                    class="text-lg text-gray-900 bg-gray-50 p-6 rounded-lg min-h-[100px]"
+                  >
+                    {{ selectedPatient.symptoms }}
+                  </div>
+                  <textarea
+                    v-else
+                    v-model="editedSymptoms"
+                    class="w-full text-lg text-gray-900 bg-gray-50 p-6 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px]"
+                    rows="4"
+                  ></textarea>
+                </div>
 
-            <!-- Notes -->
-            <div>
-              <h4 class="text-2xl font-semibold text-gray-700 mb-4">Notes</h4>
-              <div
-                v-if="!isEditing"
-                class="text-lg text-gray-900 bg-gray-50 p-6 rounded-lg min-h-[150px]"
-              >
-                {{ selectedPatient.notes }}
-              </div>
-              <textarea
-                v-else
-                v-model="editedNotes"
-                class="w-full text-lg text-gray-900 bg-gray-50 p-6 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[150px]"
-                rows="6"
-              ></textarea>
-            </div>
+                <!-- Notes -->
+                <div>
+                  <h4 class="text-2xl font-semibold text-gray-700 mb-4">Notes</h4>
+                  <div
+                    v-if="!isEditing"
+                    class="text-lg text-gray-900 bg-gray-50 p-6 rounded-lg min-h-[150px]"
+                  >
+                    {{ selectedPatient.notes }}
+                  </div>
+                  <textarea
+                    v-else
+                    v-model="editedNotes"
+                    class="w-full text-lg text-gray-900 bg-gray-50 p-6 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[150px]"
+                    rows="6"
+                  ></textarea>
+                </div>
 
-            <!-- Edit action buttons -->
-            <div v-if="isEditing" class="flex justify-end gap-3 mt-4">
-              <button
-                @click="cancelEditing"
-                class="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                @click="saveEdits"
-                class="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Save Changes
-              </button>
+                <!-- Edit action buttons -->
+                <div v-if="isEditing" class="flex justify-end gap-3 mt-4">
+                  <button
+                    @click="cancelEditing"
+                    class="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    @click="saveEdits"
+                    class="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          </Transition>
         </div>
-      </div>
+      </Transition>
 
       <!-- Settings Modal -->
       <!-- <SettingsModal :show="showSettings" @close="showSettings = false" /> -->
@@ -482,13 +492,77 @@ textarea:focus {
   outline: none;
 }
 
-/* .settings-icon {
-  transition: transform 0.2s ease;
+/* Card animations */
+.draggable-item {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.settings-icon:hover {
-  transform: rotate(45deg);
-} */
+.draggable-item:hover {
+  transform: translateY(-2px);
+}
+
+.draggable-item.sortable-ghost {
+  opacity: 0.5;
+  background: #f3f4f6;
+}
+
+.draggable-item.sortable-chosen {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal animations */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-content-enter-active,
+.modal-content-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-content-enter-from,
+.modal-content-leave-to {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+/* Status badge animations */
+.status-badge {
+  transition: all 0.3s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Priority badge animations */
+.priority-badge {
+  transition: all 0.3s ease;
+}
+
+.priority-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Notification animations */
+.notification-enter-active,
+.notification-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-enter-from,
+.notification-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
 
 /* Google Places Autocomplete custom styles */
 .pac-container {
