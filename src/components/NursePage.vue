@@ -91,7 +91,7 @@ const editedPatient = reactive({
   notes: '',
   symptoms: {
     selected: [],
-    notes: ''
+    notes: '',
   },
   vitals: {
     temperature: '',
@@ -99,13 +99,13 @@ const editedPatient = reactive({
     respirationRate: '',
     bloodPressure: {
       systolic: '',
-      diastolic: ''
-    }
+      diastolic: '',
+    },
   },
   // Add new multi-select fields
   allergies: [],
   substance_use: [],
-  family_history: []
+  family_history: [],
 })
 
 // Process patient data before displaying
@@ -150,12 +150,12 @@ const fetchPatients = async () => {
     const response = await fetch('http://localhost:3000/api/patients')
     if (!response.ok) throw new Error('Failed to fetch patients')
     const data = await response.json()
-    patients.value = data.map(patient => {
+    patients.value = data.map((patient) => {
       const processedPatient = {
         ...patient,
         id: patient._id || Math.random().toString(36).substr(2, 9), // Fallback ID if needed
         status: patient.status || 'waiting', // Default status if not set
-        priority: patient.priority || 3 // Default priority if not set
+        priority: patient.priority || 3, // Default priority if not set
       }
       return processPatientData(processedPatient)
     })
@@ -217,15 +217,21 @@ const startEditing = (patient) => {
   if (typeof patient.symptoms === 'string') {
     // Legacy format - string only
     editedPatient.symptoms = {
-      selected: patient.symptoms.split(',').map(s => s.trim()).filter(s => s !== ''),
-      notes: ''
+      selected: patient.symptoms
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s !== ''),
+      notes: '',
     }
   } else if (patient.symptoms && typeof patient.symptoms === 'object') {
     // New format - object with selected and notes
     if (Array.isArray(patient.symptoms.selected)) {
       editedPatient.symptoms.selected = [...patient.symptoms.selected]
     } else if (typeof patient.symptoms.selected === 'string') {
-      editedPatient.symptoms.selected = patient.symptoms.selected.split(',').map(s => s.trim()).filter(s => s !== '')
+      editedPatient.symptoms.selected = patient.symptoms.selected
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s !== '')
     } else {
       editedPatient.symptoms.selected = []
     }
@@ -234,7 +240,7 @@ const startEditing = (patient) => {
     // Fallback to symptom_text
     editedPatient.symptoms = {
       selected: [],
-      notes: patient.symptom_text
+      notes: patient.symptom_text,
     }
   } else {
     editedPatient.symptoms = { selected: [], notes: '' }
@@ -248,18 +254,19 @@ const startEditing = (patient) => {
       pulse: patient.vitals.pulse || '',
       respirationRate: patient.vitals.respirationRate || '',
       bloodPressure: {
-        systolic: (patient.vitals.bloodPressure?.systolic) || '',
-        diastolic: (patient.vitals.bloodPressure?.diastolic) || ''
-      }
+        systolic: patient.vitals.bloodPressure?.systolic || '',
+        diastolic: patient.vitals.bloodPressure?.diastolic || '',
+      },
     }
   } else {
     // Legacy format or missing data
     // Try to parse blood pressure if it exists as string (e.g. "120/80")
-    let systolic = '', diastolic = ''
+    let systolic = '',
+      diastolic = ''
     if (patient.bloodPressure && typeof patient.bloodPressure === 'string') {
-      const parts = patient.bloodPressure.split('/').map(v => v.trim())
+      const parts = patient.bloodPressure.split('/').map((v) => v.trim())
       if (parts.length === 2) {
-        [systolic, diastolic] = parts
+        ;[systolic, diastolic] = parts
       }
     }
 
@@ -269,8 +276,8 @@ const startEditing = (patient) => {
       respirationRate: patient.respirationRate || '',
       bloodPressure: {
         systolic: systolic,
-        diastolic: diastolic
-      }
+        diastolic: diastolic,
+      },
     }
   }
 
@@ -311,7 +318,7 @@ const saveEdits = async () => {
       await fetchPatients()
 
       // Find the updated patient in the refreshed list and select it
-      const updatedPatient = patients.value.find(p => p.id === selectedPatient.value.id)
+      const updatedPatient = patients.value.find((p) => p.id === selectedPatient.value.id)
       if (updatedPatient) {
         selectedPatient.value = updatedPatient
       }
@@ -368,6 +375,24 @@ const getPriorityColor = (priority) => {
   }
 }
 
+// Return appropriate Tailwind classes for patient card background based on priority
+const getPriorityCardBackground = (priority) => {
+  switch (priority) {
+    case 1:
+      return 'bg-red-50' // Light pastel red
+    case 2:
+      return 'bg-orange-50' // Light pastel orange
+    case 3:
+      return 'bg-yellow-50' // Light pastel yellow
+    case 4:
+      return 'bg-blue-50' // Light pastel blue
+    case 5:
+      return 'bg-green-50' // Light pastel green
+    default:
+      return 'bg-gray-50' // Default pastel gray for any other cases
+  }
+}
+
 // Notification state
 const showNotification = ref(false)
 const notificationMessage = ref('')
@@ -405,7 +430,7 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -414,7 +439,7 @@ const formatTime = (time) => {
   if (!time) return 'N/A'
   return new Date(time).toLocaleTimeString('en-US', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -423,11 +448,95 @@ onMounted(() => {
   fetchPatients()
   fetchOptions()
 })
+
+// Add busyness prediction state
+const busynessData = ref({
+  predictedPatients: null,
+  date: null,
+  timezone: null,
+  error: null,
+})
+
+// Add function to fetch busyness prediction
+const fetchBusynessPrediction = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/api/predict/busyness')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    console.log('API Response:', data)
+    const today = data.predictions.date
+    console.log('Today:', today)
+
+    busynessData.value = {
+      predictedPatients: data.predictions.predicted_busyness,
+      date: data.predictions.date,
+      timezone: null,
+      error: null,
+    }
+  } catch (error) {
+    console.error('Error fetching busyness prediction:', error)
+    busynessData.value = {
+      predictedPatients: null,
+      date: null,
+      timezone: null,
+      error: error.message || 'Unable to fetch prediction',
+    }
+  }
+}
+
+// Call on component mount
+onMounted(() => {
+  fetchBusynessPrediction()
+})
+
+// Add busyness prediction state
+const busynessData = ref({
+  predictedPatients: null,
+  date: null,
+  timezone: null,
+  error: null,
+})
+
+// Add function to fetch busyness prediction
+const fetchBusynessPrediction = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/api/predict/busyness')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    console.log('API Response:', data)
+    const today = data.predictions.date
+    console.log('Today:', today)
+
+    busynessData.value = {
+      predictedPatients: data.predictions.predicted_busyness,
+      date: data.predictions.date,
+      timezone: null,
+      error: null,
+    }
+  } catch (error) {
+    console.error('Error fetching busyness prediction:', error)
+    busynessData.value = {
+      predictedPatients: null,
+      date: null,
+      timezone: null,
+      error: error.message || 'Unable to fetch prediction',
+    }
+  }
+}
+
+// Call on component mount
+onMounted(() => {
+  fetchBusynessPrediction()
+})
 </script>
 
 <template>
   <!-- Main container - takes full viewport height -->
-  <div class="min-h-screen min-w-screen relative">
+  <div class="min-h-screen min-w-screen relative bg-gray-50">
     <!-- Notification Box -->
     <Transition name="notification">
       <div
@@ -459,46 +568,57 @@ onMounted(() => {
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header section with back button, title, and settings -->
-      <div class="flex items-center mb-8">
-        <button
-          @click="goBack"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-          ← Back to Main
-        </button>
-        <h2 class="text-2xl font-bold text-gray-900 text-center w-full">Patient Management</h2>
-        <!-- <button
-          @click="showSettings = true"
-          class="inline-flex items-center px-3 py-3 rounded-full hover:bg-gray-100 transition-colors"
-          title="Settings"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <div class="bg-white rounded-xl shadow-md mb-8 p-4">
+        <div class="flex items-center justify-between">
+          <button
+            @click="goBack"
+            class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-        </button> -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Back to Main
+          </button>
+
+          <h2
+            class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent"
+          >
+            Patient Management
+          </h2>
+
+          <div
+            class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100 shadow-sm"
+          >
+            <div class="text-sm text-blue-600 font-medium">
+              {{ busynessData.date || 'Loading...' }}
+            </div>
+            <div class="text-lg font-bold text-blue-700">
+              <template v-if="busynessData.error">
+                <span class="text-red-600">{{ busynessData.error }}</span>
+              </template>
+              <template v-else>
+                {{ busynessData.predictedPatients || '--' }} patients expected
+              </template>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Patient cards container -->
       <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
         <!-- Loading state -->
         <div v-if="loading" class="w-full text-center py-8">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"
+          ></div>
           <p class="text-gray-600">Loading patients...</p>
         </div>
 
@@ -527,7 +647,20 @@ onMounted(() => {
           <template #item="{ element }">
             <div
               @click="openPatientDetail(element)"
-              class="draggable-item bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
+              :class="[
+                'draggable-item',
+                'rounded-2xl',
+                'shadow',
+                'p-4',
+                'cursor-move',
+                'hover:shadow-md',
+                'transition-shadow',
+                'flex-1',
+                'min-w-[40em]',
+                'min-h-[10em]',
+                'mb-4',
+                getPriorityCardBackground(element.priority),
+              ]"
             >
               <!-- Card header with name and status -->
               <div class="flex justify-between items-start">
@@ -578,7 +711,11 @@ onMounted(() => {
           class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50"
         >
           <!-- Modal content -->
-          <div v-show="selectedPatient" class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto p-8">
+          <div
+            v-show="selectedPatient"
+            v-if="selectedPatient"
+            class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto p-8"
+          >
             <!-- Modal header with edit/close buttons -->
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-2xl font-bold text-gray-900">
@@ -629,20 +766,28 @@ onMounted(() => {
                       <span
                         :class="[
                           getPriorityColor(selectedPatient.priority),
-                          'px-4 py-2 rounded-full text-lg font-medium'
+                          'px-4 py-2 rounded-full text-lg font-medium',
                         ]"
                       >
                         Priority {{ selectedPatient.priority }}
                       </span>
-                      <p class="text-gray-700 text-lg mt-2">{{ selectedPatient.esi_explanation }}</p>
+                      <p class="text-gray-700 text-lg mt-2">
+                        {{ selectedPatient.esi_explanation }}
+                      </p>
                     </div>
                     <div v-else>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Priority Level</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-1"
+                        >Priority Level</label
+                      >
                       <select
                         v-model="editedPatient.priority"
                         class="px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
                       >
-                        <option v-for="option in priorityOptions" :key="option.value" :value="option.value">
+                        <option
+                          v-for="option in priorityOptions"
+                          :key="option.value"
+                          :value="option.value"
+                        >
                           {{ option.label }}
                         </option>
                       </select>
@@ -660,7 +805,11 @@ onMounted(() => {
                       v-model="editedPatient.status"
                       class="px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                      <option
+                        v-for="option in statusOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
                         {{ option.label }}
                       </option>
                     </select>
@@ -669,7 +818,7 @@ onMounted(() => {
                     <span
                       :class="[
                         getStatusColor(selectedPatient.status),
-                        'px-3 py-1 rounded-full text-sm font-medium'
+                        'px-3 py-1 rounded-full text-sm font-medium',
                       ]"
                     >
                       {{ getStatusLabel(selectedPatient.status) }}
@@ -699,7 +848,9 @@ onMounted(() => {
                       </div>
                       <div>
                         <p class="text-sm text-gray-500">Date of Birth</p>
-                        <p class="text-lg text-gray-900">{{ formatDate(selectedPatient.dateOfBirth) }}</p>
+                        <p class="text-lg text-gray-900">
+                          {{ formatDate(selectedPatient.dateOfBirth) }}
+                        </p>
                       </div>
                       <div>
                         <p class="text-sm text-gray-500">Phone Number</p>
@@ -708,7 +859,8 @@ onMounted(() => {
                       <div class="col-span-2">
                         <p class="text-sm text-gray-500">Visit Information</p>
                         <p class="text-lg text-gray-900">
-                          {{ formatDate(selectedPatient.dateOfVisit) }} at {{ formatTime(selectedPatient.timeEntered) }}
+                          {{ formatDate(selectedPatient.dateOfVisit) }} at
+                          {{ formatTime(selectedPatient.timeEntered) }}
                         </p>
                       </div>
                     </div>
@@ -717,7 +869,9 @@ onMounted(() => {
                     <div v-else class="space-y-4">
                       <div class="grid grid-cols-2 gap-4">
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >First Name</label
+                          >
                           <input
                             type="text"
                             v-model="editedPatient.firstName"
@@ -725,7 +879,9 @@ onMounted(() => {
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Last Name</label
+                          >
                           <input
                             type="text"
                             v-model="editedPatient.lastName"
@@ -735,7 +891,9 @@ onMounted(() => {
                       </div>
                       <div class="grid grid-cols-2 gap-4">
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Date of Birth</label
+                          >
                           <input
                             type="date"
                             v-model="editedPatient.dateOfBirth"
@@ -743,7 +901,9 @@ onMounted(() => {
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Phone Number</label
+                          >
                           <input
                             type="tel"
                             v-model="editedPatient.phoneNumber"
@@ -776,7 +936,11 @@ onMounted(() => {
                       <div>
                         <p class="text-sm text-gray-500">Blood Pressure</p>
                         <p class="text-lg text-gray-900">
-                          {{ selectedPatient.bloodPressure || selectedPatient.vitals?.bloodPressure || 'N/A' }}
+                          {{
+                            selectedPatient.bloodPressure ||
+                            selectedPatient.vitals?.bloodPressure ||
+                            'N/A'
+                          }}
                         </p>
                       </div>
                       <div>
@@ -791,7 +955,9 @@ onMounted(() => {
                     <div v-else class="space-y-4">
                       <div class="grid grid-cols-2 gap-4">
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Temperature (°F)</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Temperature (°F)</label
+                          >
                           <input
                             type="number"
                             v-model="editedPatient.vitals.temperature"
@@ -799,7 +965,9 @@ onMounted(() => {
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Pulse (bpm)</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Pulse (bpm)</label
+                          >
                           <input
                             type="number"
                             v-model="editedPatient.vitals.pulse"
@@ -809,7 +977,9 @@ onMounted(() => {
                       </div>
                       <div class="grid grid-cols-2 gap-4">
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Blood Pressure</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Blood Pressure</label
+                          >
                           <div class="flex gap-2 items-center">
                             <input
                               type="number"
@@ -827,7 +997,9 @@ onMounted(() => {
                           </div>
                         </div>
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Respiration Rate (/min)</label>
+                          <label class="block text-sm font-medium text-gray-700 mb-1"
+                            >Respiration Rate (/min)</label
+                          >
                           <input
                             type="number"
                             v-model="editedPatient.vitals.respirationRate"
@@ -953,6 +1125,17 @@ onMounted(() => {
                         </div>
                       </div>
                     </div>
+                    <div v-if="selectedPatient.allergies?.length" class="space-y-2">
+                      <div
+                        v-for="allergy in selectedPatient.allergies"
+                        :key="allergy.name"
+                        class="p-2 bg-white rounded"
+                      >
+                        <p class="font-medium text-gray-900">{{ allergy.name }}</p>
+                        <p class="text-sm text-gray-600">{{ allergy.reaction }}</p>
+                      </div>
+                    </div>
+                    <p v-else class="text-gray-600">No known allergies</p>
                   </div>
                 </div>
               </div>
@@ -980,7 +1163,9 @@ onMounted(() => {
                         </div>
                         <div>
                           <p class="text-sm text-gray-500">Additional Notes</p>
-                          <p class="text-lg text-gray-900 mt-1">{{ selectedPatient.symptoms.notes || 'None' }}</p>
+                          <p class="text-lg text-gray-900 mt-1">
+                            {{ selectedPatient.symptoms.notes || 'None' }}
+                          </p>
                         </div>
                       </div>
                       <div v-else class="space-y-4">
@@ -990,6 +1175,23 @@ onMounted(() => {
 
                     <!-- Edit Mode -->
                     <div v-else-if="isEditing" class="space-y-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Symptoms</label>
+                        <div class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto">
+                          <div class="grid grid-cols-2 gap-2">
+                            <div v-for="option in symptomOptions" :key="option" class="flex items-center">
+                              <input
+                                type="checkbox"
+                                :id="'symptom-' + option"
+                                :value="option"
+                                v-model="editedPatient.symptoms.selected"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                              >
+                              <label :for="'symptom-' + option" class="ml-2 text-sm text-gray-700">{{ option }}</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Select Symptoms</label>
                         <div class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto">
@@ -1027,7 +1229,9 @@ onMounted(() => {
                   <h3 class="text-xl font-semibold text-gray-900 mb-4">Notes</h3>
                   <div class="bg-gray-50 rounded-lg p-6">
                     <div v-if="!isEditing">
-                      <p class="text-lg text-gray-900">{{ selectedPatient.notes || 'No notes available' }}</p>
+                      <p class="text-lg text-gray-900">
+                        {{ selectedPatient.notes || 'No notes available' }}
+                      </p>
                     </div>
                     <div v-else>
                       <textarea
@@ -1045,7 +1249,11 @@ onMounted(() => {
                   <h3 class="text-xl font-semibold text-gray-900 mb-4">Current Medications</h3>
                   <div class="bg-gray-50 rounded-lg p-6">
                     <div v-if="selectedPatient.medications?.length" class="space-y-2">
-                      <div v-for="medication in selectedPatient.medications" :key="medication.name" class="p-2 bg-white rounded">
+                      <div
+                        v-for="medication in selectedPatient.medications"
+                        :key="medication.name"
+                        class="p-2 bg-white rounded"
+                      >
                         <p class="font-medium text-gray-900">{{ medication.name }}</p>
                         <p class="text-sm text-gray-600">
                           {{ medication.dosage }} - {{ medication.frequency }}
@@ -1068,108 +1276,124 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Custom styles can be added here if needed */
-
-textarea {
-  resize: vertical;
-  transition: all 0.2s ease;
+/* Base styles */
+.min-h-screen {
+  background: linear-gradient(135deg, #f6f8fc 0%, #f1f4f9 100%);
 }
 
-textarea:focus {
-  outline: none;
-}
-
-/* Card animations */
+/* Card styles */
 .draggable-item {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  /* backdrop-filter: blur(8px); removed for solid pastel backgrounds */
+  /* background: rgba(255, 255, 255, 0.9); removed to use Tailwind bg classes */
 }
 
 .draggable-item:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(226, 232, 240, 1);
 }
 
-.draggable-item.sortable-ghost {
-  opacity: 0.5;
-  background: #f3f4f6;
-}
-
-.draggable-item.sortable-chosen {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-/* Modal animations */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-content-enter-active,
-.modal-content-leave-active {
-  transition: all 0.3s ease;
-}
-
-.modal-content-enter-from,
-.modal-content-leave-to {
-  transform: scale(0.95);
-  opacity: 0;
-}
-
-/* Status badge animations */
+/* Status badges */
 .status-badge {
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .status-badge:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Priority badge animations */
+/* Priority badges */
 .priority-badge {
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .priority-badge:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Notification animations */
+/* Modal styles */
+.modal-content-enter-active,
+.modal-content-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-content-enter-from,
+.modal-content-leave-to {
+  transform: scale(0.95) translateY(-10px);
+  opacity: 0;
+}
+
+/* Form elements */
+textarea {
+  resize: vertical;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Buttons */
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* Busyness prediction box */
+.bg-blue-50 {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.bg-blue-50:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Notification styles */
 .notification-enter-active,
 .notification-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-enter-from,
 .notification-leave-to {
-  transform: translateX(100%);
+  transform: translateX(100%) translateY(-10px);
   opacity: 0;
 }
 
-/* Google Places Autocomplete custom styles */
-.pac-container {
-  border-radius: 0.375rem;
-  margin-top: 4px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+/* Header styles */
+h2.text-2xl {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.pac-item {
-  padding: 8px 12px;
-  font-family: inherit;
+/* Drag ghost styles */
+.draggable-item.sortable-ghost {
+  opacity: 0.5;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
 }
 
-.pac-item:hover {
-  background-color: #f3f4f6;
-}
-
-.pac-item-selected {
-  background-color: #e5e7eb;
+.draggable-item.sortable-chosen {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
 }
 </style>
