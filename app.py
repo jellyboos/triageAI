@@ -9,6 +9,7 @@ import requests
 import pytz
 from bson import ObjectId
 import json
+from map import find_nearest_emergency_rooms
 
 # Custom JSON encoder to handle ObjectId
 class MongoJSONEncoder(json.JSONEncoder):
@@ -494,6 +495,10 @@ def get_location():
                 "ip": ip
             }
         })
+
+@app.route('/api/emergency-rooms', methods=['GET'])
+def get_emergency_rooms():
+    closet_emergency_rooms = find_nearest_emergency_rooms()
 
 # Start Flask server
 if __name__ == "__main__":
