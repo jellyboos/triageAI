@@ -105,6 +105,7 @@ const editedPatient = reactive({
   allergies: [],
   substance_use: [],
   family_history: [],
+  treatmentPlan: '',
 })
 
 // Process patient data before displaying
@@ -298,6 +299,9 @@ const startEditing = (patient) => {
     ? [...patient.family_history]
     : []
 
+  // Handle treatment plan
+  editedPatient.treatmentPlan = patient.treatmentPlan || ''
+
   isEditing.value = true
 }
 
@@ -320,6 +324,7 @@ const saveEdits = async () => {
       allergies: editedPatient.allergies,
       substance_use: editedPatient.substance_use,
       family_history: editedPatient.family_history,
+      treatmentPlan: editedPatient.treatmentPlan,
     }
 
     // Save to database
@@ -643,6 +648,7 @@ const updatePatientStatus = async (patient, newStatus) => {
               <div class="text-lg font-bold text-blue-700">
                 <template v-if="busynessData.error">
                   <span class="text-red-600">{{ busynessData.error }}</span>
+                  'px-4 py-2 rounded-lg font-medium transition-colors',
                 </template>
                 <template v-else>
                   {{ busynessData.predictedPatients || '--' }} patients expected
@@ -658,7 +664,6 @@ const updatePatientStatus = async (patient, newStatus) => {
           <button
             @click="activeTab = 'all'"
             :class="[
-              'px-4 py-2 rounded-lg font-medium transition-colors',
               activeTab === 'all'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
@@ -1524,6 +1529,26 @@ const updatePatientStatus = async (patient, newStatus) => {
                       </div>
                     </div>
                     <p v-else class="text-gray-600">No current medications</p>
+                  </div>
+                </div>
+
+                <!-- Treatment Plan -->
+                <div>
+                  <h3 class="text-xl font-semibold text-gray-900 mb-4">Treatment Plan</h3>
+                  <div class="bg-gray-50 rounded-lg p-6">
+                    <div v-if="!isEditing">
+                      <p class="text-lg text-gray-900 whitespace-pre-line">
+                        {{ selectedPatient.treatmentPlan || 'No treatment plan available' }}
+                      </p>
+                    </div>
+                    <div v-else>
+                      <textarea
+                        v-model="editedPatient.treatmentPlan"
+                        rows="6"
+                        class="px-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full resize-none"
+                        placeholder="Enter treatment plan details"
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
               </div>
