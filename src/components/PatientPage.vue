@@ -500,7 +500,6 @@ const removeImage = (index) => {
   text-align: center;
   max-width: 1200px;
   margin: 0 auto;
-  animation: fadeIn 0.5s ease-out;
   font-size: 1.1rem;
 }
 
@@ -512,12 +511,6 @@ const removeImage = (index) => {
   border-radius: 4px;
   cursor: pointer;
   margin-bottom: 1rem;
-  transition: all 0.3s ease;
-}
-
-.back-button:hover {
-  background-color: #555;
-  transform: translateX(-3px);
 }
 
 .patient-form {
@@ -530,14 +523,6 @@ const removeImage = (index) => {
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-}
-
-.patient-form:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .form-section {
@@ -575,34 +560,22 @@ const removeImage = (index) => {
   padding: 0.5rem;
   background: #f8f8f8;
   border-radius: 4px;
-  transition: all 0.3s ease;
 }
 
-.checkbox-item:hover {
-  background: #f0f0f0;
-  transform: translateX(3px);
+.checkbox-item:after {
+  background-color: black;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transition: transform 0.3s ease;
-}
-
-.form-group:focus-within {
-  transform: translateX(5px);
 }
 
 label {
   font-weight: 600;
   color: #333;
-  transition: color 0.3s ease;
   font-size: 1.2rem;
-}
-
-.form-group:focus-within label {
-  color: #4caf50;
 }
 
 input {
@@ -610,19 +583,18 @@ input {
   border: 2px solid #e0e0e0;
   border-radius: 6px;
   font-size: 1.1rem;
-  transition: all 0.3s ease;
   background: #f8f8f8;
 }
 
 input:focus {
   outline: none;
-  border-color: #4caf50;
+  border-color: indigo-600;
   background: white;
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 
 .submit-button {
-  background-color: #4caf50;
+  background-color: indigo-600;
   color: white;
   padding: 0.75rem;
   border: none;
@@ -630,43 +602,24 @@ input:focus {
   cursor: pointer;
   font-size: 1rem;
   margin-top: 1rem;
-  transition: all 0.3s ease;
   font-weight: 600;
-}
-
-.submit-button:hover:not(:disabled) {
-  background-color: #45a049;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
-}
-
-.submit-button:active:not(:disabled) {
-  transform: translateY(0);
 }
 
 .submit-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .error-message {
   color: #ff0000;
   margin-top: 1rem;
   font-size: 0.9rem;
-  animation: shake 0.5s ease-in-out;
 }
 
 .blood-pressure-inputs {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: transform 0.3s ease;
-}
-
-.blood-pressure-inputs:focus-within {
-  transform: translateX(5px);
 }
 
 .bp-separator {
@@ -674,30 +627,6 @@ input:focus {
   font-weight: bold;
   margin: 0 0.25rem;
   color: #666;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  75% {
-    transform: translateX(5px);
-  }
 }
 
 h2 {
