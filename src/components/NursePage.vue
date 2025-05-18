@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import SettingsModal from './SettingsModal.vue'
+import draggable from 'vuedraggable'
 
 // Emit events to parent component for navigation
 const emit = defineEmits(['navigate'])
@@ -12,6 +13,9 @@ const goBack = () => {
 
 // Settings modal state
 const showSettings = ref(false)
+
+// Track drag state
+const drag = ref(false)
 
 // Mock patient data - in real app, this would come from an API
 const patients = ref([
@@ -41,6 +45,24 @@ const patients = ref([
     priority: 3,
     symptoms: 'Headache',
     notes: 'Mild headache, no other symptoms',
+  },
+  {
+    id: 4,
+    name: 'Sarah Williams',
+    checkInTime: '2024-03-20T11:15:00',
+    status: 'completed',
+    priority: 4,
+    symptoms: 'Fever, Cough',
+    notes: 'Patient reports high fever for 2 days',
+  },
+  {
+    id: 5,
+    name: 'David Brown',
+    checkInTime: '2024-03-20T11:30:00',
+    status: 'completed',
+    priority: 5,
+    symptoms: 'Fever, Cough',
+    notes: 'Patient reports high fever for 2 days',
   },
 ])
 
@@ -80,6 +102,10 @@ const getPriorityColor = (priority) => {
       return 'bg-orange-100 text-orange-800'
     case 3:
       return 'bg-yellow-100 text-yellow-800'
+    case 4:
+      return 'bg-green-100 text-green-800'
+    case 5:
+      return 'bg-purple-100 text-purple-800'
     default:
       return 'bg-gray-100 text-gray-800'
   }
@@ -127,48 +153,55 @@ const getPriorityColor = (priority) => {
           </svg>
         </button>
       </div>
-
       <!-- Patient cards container -->
       <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
-        <!-- Individual patient card -->
-        <div
-          v-for="patient in patients"
-          :key="patient.id"
-          @click="openPatientDetail(patient)"
-          class="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em]"
+        <draggable
+          v-model="patients"
+          item-key="id"
+          class="w-full"
+          @start="drag=true"
+          @end="drag=false"
         >
-          <!-- Card header with name and status -->
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900">{{ patient.name }}</h3>
-              <p class="text-sm text-gray-500">
-                Check-in: {{ new Date(patient.checkInTime).toLocaleTimeString() }}
-              </p>
+          <template #item="{ element: patient }">
+            <div
+              @click="openPatientDetail(patient)"
+              class="bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
+            >
+              <!-- Card header with name and status -->
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ patient.name }}</h3>
+                  <p class="text-sm text-gray-500">
+                    Check-in: {{ new Date(patient.checkInTime).toLocaleTimeString() }}
+                  </p>
+                </div>
+
+                <!-- Status badge -->
+                <span
+                  :class="[
+                    getStatusColor(patient.status),
+                    'px-2 py-1 rounded-full text-xs font-medium',
+                  ]"
+                >
+                  {{ patient.status }}
+                </span>
+              </div>
+              <!-- Priority badge -->
+              <div class="mt-2">
+                <span
+                  :class="[
+                    getPriorityColor(patient.priority),
+                    'px-2 py-1 rounded-full text-xs font-medium',
+                  ]"
+                >
+                  Priority {{ patient.priority }}
+                </span>
+              </div>
+              <!-- Symptoms preview -->
+              <p class="mt-2 text-sm text-gray-600">{{ patient.symptoms }}</p>
             </div>
-            <!-- Status badge -->
-            <span
-              :class="[
-                getStatusColor(patient.status),
-                'px-2 py-1 rounded-full text-xs font-medium',
-              ]"
-            >
-              {{ patient.status }}
-            </span>
-          </div>
-          <!-- Priority badge -->
-          <div class="mt-2">
-            <span
-              :class="[
-                getPriorityColor(patient.priority),
-                'px-2 py-1 rounded-full text-xs font-medium',
-              ]"
-            >
-              Priority {{ patient.priority }}
-            </span>
-          </div>
-          <!-- Symptoms preview -->
-          <p class="mt-2 text-sm text-gray-600">{{ patient.symptoms }}</p>
-        </div>
+          </template>
+        </draggable>
       </div>
 
       <!-- Patient Detail Modal -->
