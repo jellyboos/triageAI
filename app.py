@@ -1,7 +1,7 @@
 # Flask application for patient triage system
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
-from model import generate_triage
+from model import generate_triage, generate_treatment_plan
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from busyness_predictor import BusynessPredictor
@@ -9,6 +9,7 @@ import requests
 import pytz
 from bson import ObjectId
 import json
+from map import find_nearest_emergency_rooms
 
 # Custom JSON encoder to handle ObjectId
 class MongoJSONEncoder(json.JSONEncoder):
@@ -221,6 +222,22 @@ def patient_data():
                     "message": f"Error generating triage: {str(e)}"
                 }), 500
 
+            try:
+                # Generate ESI
+                treatment_response = generate_treatment_plan(
+                    vitals.get('temperature'), 
+                    vitals.get('pulse'), 
+                    vitals.get('respirationRate'), 
+                    bloodPressure, 
+                    symptom_text
+                )
+                print("TREATMENT RESPONSE: ", treatment_response)
+            except Exception as e:
+                print("Error in generate_treatment_plan:", str(e))
+                return jsonify({
+                    "status": "error",
+                    "message": f"Error generating treatment plan: {str(e)}"
+                }), 500
             # Create patient record for database
             patient_record = {
                 "firstName": firstName,
@@ -403,6 +420,7 @@ def get_busyness_prediction(date=None):
         print(f"Error in busyness prediction: {str(e)}")
         return None
 
+
 @app.route('/api/predict/busyness', methods=['GET'])
 def predict_busyness():
     try:
@@ -449,6 +467,7 @@ def predict_busyness():
             "message": str(e)
         }), 500
 
+
 @app.route('/api/location', methods=['GET'])
 def get_location():
     try:
@@ -492,6 +511,11 @@ def get_location():
                 "ip": ip
             }
         })
+
+@app.route('/api/emergency-rooms', methods=['GET'])
+def get_emergency_rooms():
+    closet_emergency_rooms = find_nearest_emergency_rooms()
+    return closet_emergency_rooms
 
 # Start Flask server
 if __name__ == "__main__":

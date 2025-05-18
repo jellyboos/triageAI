@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 // import SettingsModal from './SettingsModal.vue'
 import draggable from 'vuedraggable'
 
@@ -483,12 +483,12 @@ const fetchBusynessPrediction = async () => {
     }
     const data = await response.json()
     console.log('API Response:', data)
-    const today = data.predictions.date
-    console.log('Today:', today)
 
+    // Handle the predictions array structure
+    const prediction = data.predictions[0] // Get first prediction from array
     busynessData.value = {
-      predictedPatients: data.predictions.predicted_busyness,
-      date: data.predictions.date,
+      predictedPatients: prediction.predicted_busyness,
+      date: prediction.date,
       timezone: null,
       error: null,
     }
@@ -500,6 +500,55 @@ const fetchBusynessPrediction = async () => {
       timezone: null,
       error: error.message || 'Unable to fetch prediction',
     }
+  }
+}
+
+// Add current active tab state
+const activeTab = ref('all')
+
+// Filter patients by status
+const filteredPatients = computed(() => {
+  if (activeTab.value === 'all') {
+    return patients.value
+  }
+  return patients.value.filter((patient) => patient.status === activeTab.value)
+})
+
+// Count patients by status
+const patientCounts = computed(() => {
+  const counts = {
+    all: patients.value.length,
+    waiting: 0,
+    'in-progress': 0,
+    completed: 0,
+  }
+
+  patients.value.forEach((patient) => {
+    if (Object.prototype.hasOwnProperty.call(counts, patient.status)) {
+      counts[patient.status]++
+    }
+  })
+
+  return counts
+})
+
+// Quick status update function
+const updatePatientStatus = async (patient, newStatus) => {
+  try {
+    // Prepare updates with only the status field
+    const updates = {
+      status: newStatus,
+    }
+
+    // Save to database
+    const response = await updatePatient(patient.id, updates)
+
+    if (response.status === 'success') {
+      // Reload all patients from the server to ensure consistency
+      await fetchPatients()
+    }
+  } catch (err) {
+    console.error('Failed to update patient status:', err)
   }
 }
 </script>
@@ -565,21 +614,91 @@ const fetchBusynessPrediction = async () => {
             Patient Management
           </h2>
 
-          <div
-            class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100 shadow-sm"
-          >
-            <div class="text-sm text-blue-600 font-medium">
-              {{ busynessData.date || 'Loading...' }}
-            </div>
-            <div class="text-lg font-bold text-blue-700">
-              <template v-if="busynessData.error">
-                <span class="text-red-600">{{ busynessData.error }}</span>
-              </template>
-              <template v-else>
-                {{ busynessData.predictedPatients || '--' }} patients expected
-              </template>
+          <div class="flex items-center gap-4">
+            <button
+              @click="emit('navigate', 'high-priority')"
+              class="inline-flex items-center px-4 py-2 border border-red-200 rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all duration-200 hover:shadow-md"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Add High Priority Patient
+            </button>
+
+            <div
+              class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100 shadow-sm"
+            >
+              <div class="text-sm text-blue-600 font-medium">
+                {{ busynessData.date || 'Loading...' }}
+              </div>
+              <div class="text-lg font-bold text-blue-700">
+                <template v-if="busynessData.error">
+                  <span class="text-red-600">{{ busynessData.error }}</span>
+                </template>
+                <template v-else>
+                  {{ busynessData.predictedPatients || '--' }} patients expected
+                </template>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+      <!-- Tab Navigation -->
+      <div class="bg-white rounded-xl shadow-md mb-6 p-4">
+        <div class="flex justify-center space-x-4">
+          <button
+            @click="activeTab = 'all'"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium transition-colors',
+              activeTab === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+            ]"
+          >
+            All Patients ({{ patientCounts.all }})
+          </button>
+          <button
+            @click="activeTab = 'waiting'"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium transition-colors',
+              activeTab === 'waiting'
+                ? 'bg-yellow-500 text-white'
+                : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100',
+            ]"
+          >
+            Processing ({{ patientCounts.waiting }})
+          </button>
+          <button
+            @click="activeTab = 'in-progress'"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium transition-colors',
+              activeTab === 'in-progress'
+                ? 'bg-blue-500 text-white'
+                : 'bg-blue-50 text-blue-700 hover:bg-blue-100',
+            ]"
+          >
+            In Progress ({{ patientCounts['in-progress'] }})
+          </button>
+          <button
+            @click="activeTab = 'completed'"
+            :class="[
+              'px-4 py-2 rounded-lg font-medium transition-colors',
+              activeTab === 'completed'
+                ? 'bg-green-500 text-white'
+                : 'bg-green-50 text-green-700 hover:bg-green-100',
+            ]"
+          >
+            Completed ({{ patientCounts.completed }})
+          </button>
         </div>
       </div>
       <!-- Patient cards container -->
@@ -605,10 +724,42 @@ const fetchBusynessPrediction = async () => {
           </div>
         </div>
 
+        <!-- Empty state for filtered results -->
+        <div v-else-if="filteredPatients.length === 0" class="w-full text-center py-8">
+          <div
+            class="bg-gray-50 border border-gray-200 text-gray-700 px-6 py-8 rounded-lg shadow-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-12 w-12 mx-auto text-gray-400 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <h3 class="text-xl font-medium text-gray-900 mb-2">No patients found</h3>
+            <p class="text-gray-600 mb-4">
+              There are no patients in the "{{ getStatusLabel(activeTab) }}" status category.
+            </p>
+            <button
+              @click="activeTab = 'all'"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              View All Patients
+            </button>
+          </div>
+        </div>
+
         <!-- Patient list -->
         <draggable
           v-else
-          :list="patients"
+          :list="filteredPatients"
           item-key="id"
           class="w-full"
           @start="drag = true"
@@ -646,15 +797,37 @@ const fetchBusynessPrediction = async () => {
                   </p>
                 </div>
 
-                <!-- Status badge -->
-                <span
-                  :class="[
-                    getStatusColor(element.status),
-                    'status-badge px-2 py-1 rounded-full text-xs font-medium',
-                  ]"
-                >
-                  {{ getStatusLabel(element.status) }}
-                </span>
+                <!-- Status controls -->
+                <div>
+                  <!-- Status badge -->
+                  <span
+                    :class="[
+                      getStatusColor(element.status),
+                      'status-badge px-2 py-1 rounded-full text-xs font-medium mb-2 inline-block',
+                    ]"
+                  >
+                    {{ getStatusLabel(element.status) }}
+                  </span>
+
+                  <!-- Quick status change dropdown -->
+                  <div class="mt-2">
+                    <select
+                      :value="element.status"
+                      @change="updatePatientStatus(element, $event.target.value)"
+                      class="text-xs border border-gray-300 rounded p-1"
+                      @click.stop
+                    >
+                      <option disabled>Change Status</option>
+                      <option
+                        v-for="option in statusOptions"
+                        :key="option.value"
+                        :value="option.value"
+                      >
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
               </div>
               <!-- Priority badge -->
               <div class="mt-2">
