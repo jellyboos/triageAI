@@ -20,13 +20,13 @@ const patient = ref({
     bloodPressure: {
       systolic: '',
       diastolic: '',
-    }
+    },
   },
 
   // Allergies and Medications
   allergies: {
     selected: [],
-    other: ''
+    other: '',
   },
   medications: {
     current: '',
@@ -37,24 +37,24 @@ const patient = ref({
     substanceUse: {
       alcohol: false,
       tobacco: false,
-      recreationalDrugs: false
+      recreationalDrugs: false,
     },
     familyHistory: {
       selected: [],
-      other: ''
+      other: '',
     },
     surgeries: '',
-    complications: ''
+    complications: '',
   },
 
   // Current Symptoms
   symptoms: {
     selected: [],
-    notes: ''
+    notes: '',
   },
 
   // Images (if needed)
-  images: []
+  images: [],
 })
 
 // Common options for dropdowns
@@ -67,7 +67,7 @@ const commonAllergies = [
   'Eggs',
   'Soy',
   'Tree Nuts',
-  'Wheat/Gluten'
+  'Wheat/Gluten',
 ]
 
 const commonFamilyHistory = [
@@ -78,7 +78,7 @@ const commonFamilyHistory = [
   'Stroke',
   'Mental Health Conditions',
   'Asthma',
-  'Arthritis'
+  'Arthritis',
 ]
 
 const commonSymptoms = [
@@ -91,7 +91,7 @@ const commonSymptoms = [
   'Sore throat',
   'Loss of taste/smell',
   'Nausea',
-  'Diarrhea'
+  'Diarrhea',
 ]
 
 const loading = ref(false)
@@ -111,14 +111,14 @@ const submitForm = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(patient.value)
+      body: JSON.stringify(patient.value),
     })
 
     if (!response.ok) {
       throw new Error(`Server responded with status: ${response.status}`)
     }
 
-    const data = await response.json()
+    await response.json()
     showSuccessModal.value = true
 
     // Reset form with empty values but keep the structure
@@ -135,11 +135,11 @@ const submitForm = async () => {
         bloodPressure: {
           systolic: '',
           diastolic: '',
-        }
+        },
       },
       allergies: {
         selected: [],
-        other: ''
+        other: '',
       },
       medications: {
         current: '',
@@ -148,20 +148,20 @@ const submitForm = async () => {
         substanceUse: {
           alcohol: false,
           tobacco: false,
-          recreationalDrugs: false
+          recreationalDrugs: false,
         },
         familyHistory: {
           selected: [],
-          other: ''
+          other: '',
         },
         surgeries: '',
-        complications: ''
+        complications: '',
       },
       symptoms: {
         selected: [],
-        notes: ''
+        notes: '',
       },
-      images: []
+      images: [],
     }
   } catch (err) {
     error.value = err.message || 'Failed to submit patient data'
@@ -261,12 +261,7 @@ const removeImage = (index) => {
 
           <div class="form-group">
             <label for="dateOfBirth">Date of Birth</label>
-            <input
-              id="dateOfBirth"
-              v-model="patient.dateOfBirth"
-              type="date"
-              required
-            />
+            <input id="dateOfBirth" v-model="patient.dateOfBirth" type="date" required />
           </div>
 
           <div class="form-group">
@@ -360,11 +355,7 @@ const removeImage = (index) => {
               <label :for="allergy">{{ allergy }}</label>
             </div>
           </div>
-          <input
-            v-model="patient.allergies.other"
-            type="text"
-            placeholder="Other allergies..."
-          />
+          <input v-model="patient.allergies.other" type="text" placeholder="Other allergies..." />
         </div>
 
         <div class="form-group">
@@ -636,4 +627,3 @@ h2 {
   font-weight: 700;
 }
 </style>
-

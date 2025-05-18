@@ -27,18 +27,3 @@ def generate_triage(temperature, pulse, respiration, bloodPressure, symptoms):
     except Exception as e:
         print(f"Error in generate_triage: {str(e)}")
         return "3 - Default triage level due to processing error"
-
-def find_speicalist(symptoms):
-    try:
-        parts = [{
-            "text": f"if these symptoms deems it needed to call an oncall speicalist, please state the names of the speicalists
-            Sample response: oncologist, Sample response when there are mutiple speicalists needed: oncologist,neurologist
-            "
-        }]
-
-
-        response = client.models.generate_content(model='gemini-2.0-flash', contents=parts)
-        return response.text
-    except Exception as e:
-        print(f"Error in finding speicalists: {str(e)}")
-        return "3 - Default triage level due to processing error"
