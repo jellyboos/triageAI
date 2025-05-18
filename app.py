@@ -76,7 +76,7 @@ def patient_data():
                 print("Blood pressure:", bloodPressure)
                 print("Symptoms:", symptom_text)
                 model_response = generate_triage(temperature, pulse, respiration, bloodPressure, symptom_text).split(" - ")
-                esi_number = model_response[0]
+                esi_number = ''.join(c for c in model_response[0] if c.isdigit())
                 esi_explanation = model_response[1]
                 print("ESI num:", esi_number)
                 print("ESI explanation:", esi_explanation)
