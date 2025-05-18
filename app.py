@@ -38,6 +38,34 @@ def handle_message():
         return jsonify({"response": f"Server received: {message}"})
     return jsonify({"message": "Hello from Flask!"})
 
+@app.route('/api/patients/<int:patient_id>', methods=['PUT'])
+def update_patient(patient_id):
+    try:
+        data = request.get_json()
+        print(f"Received update for patient {patient_id}:", data)  # Debug log
+        
+        # Here you would typically update the patient in your database
+        # For now, we'll just return the updated data
+        updated_patient = {
+            "id": patient_id,
+            "symptoms": data.get('symptoms'),
+            "notes": data.get('notes'),
+            "status": data.get('status', 'waiting'),
+            "priority": data.get('priority', 3)
+        }
+        
+        return jsonify({
+            "status": "success",
+            "message": "Patient updated successfully",
+            "patient": updated_patient
+        })
+    except Exception as e:
+        print(f"Error updating patient: {str(e)}")  # Debug log
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 if __name__ == "__main__":
     print("Starting Flask server on port 5000...") # Debug log
     app.run(debug=True, port=5000, host='0.0.0.0')
