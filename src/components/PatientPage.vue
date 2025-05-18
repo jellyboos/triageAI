@@ -118,7 +118,7 @@ const submitForm = async () => {
       throw new Error(`Server responded with status: ${response.status}`)
     }
 
-    await response.json()
+    const data = await response.json()
     showSuccessModal.value = true
 
     // Reset form with empty values but keep the structure
