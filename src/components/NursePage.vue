@@ -17,6 +17,11 @@ const showSettings = ref(false)
 // Track drag state
 const drag = ref(false)
 
+// Track edit state
+const isEditing = ref(false)
+const editedSymptoms = ref('')
+const editedNotes = ref('')
+
 // Mock patient data - in real app, this would come from an API
 const patients = ref([
   {
@@ -77,6 +82,27 @@ const openPatientDetail = (patient) => {
 // Close patient detail modal
 const closePatientDetail = () => {
   selectedPatient.value = null
+}
+
+// Start editing patient details
+const startEditing = (patient) => {
+  isEditing.value = true
+  editedSymptoms.value = patient.symptoms
+  editedNotes.value = patient.notes
+}
+
+// Save edited patient details
+const saveEdits = () => {
+  if (selectedPatient.value) {
+    selectedPatient.value.symptoms = editedSymptoms.value
+    selectedPatient.value.notes = editedNotes.value
+    isEditing.value = false
+  }
+}
+
+// Cancel editing
+const cancelEditing = () => {
+  isEditing.value = false
 }
 
 // Return appropriate Tailwind classes based on patient status
@@ -159,8 +185,8 @@ const getPriorityColor = (priority) => {
           v-model="patients"
           item-key="id"
           class="w-full"
-          @start="drag=true"
-          @end="drag=false"
+          @start="drag = true"
+          @end="drag = false"
         >
           <template #item="{ element: patient }">
             <div
@@ -239,17 +265,26 @@ const getPriorityColor = (priority) => {
                 </span>
               </div>
             </div>
-            <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
-              <span class="sr-only">Close</span>
-              <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+            <div class="flex gap-2">
+              <button
+                v-if="!isEditing"
+                @click="startEditing(selectedPatient)"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Edit
+              </button>
+              <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
+                <span class="sr-only">Close</span>
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Modal body with patient details -->
@@ -259,17 +294,45 @@ const getPriorityColor = (priority) => {
               <div class="flex justify-between items-center mb-2">
                 <h4 class="text-xl font-medium text-gray-700">Symptoms</h4>
               </div>
-              <p class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+              <div v-if="!isEditing" class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
                 {{ selectedPatient.symptoms }}
-              </p>
+              </div>
+              <textarea
+                v-else
+                v-model="editedSymptoms"
+                class="w-full text-lg text-gray-900 bg-gray-50 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                rows="3"
+              ></textarea>
             </div>
 
             <!-- Notes -->
             <div>
               <h4 class="text-xl font-medium text-gray-700 mb-2">Notes</h4>
-              <p class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+              <div v-if="!isEditing" class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
                 {{ selectedPatient.notes }}
-              </p>
+              </div>
+              <textarea
+                v-else
+                v-model="editedNotes"
+                class="w-full text-lg text-gray-900 bg-gray-50 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                rows="5"
+              ></textarea>
+            </div>
+
+            <!-- Edit action buttons -->
+            <div v-if="isEditing" class="flex justify-end gap-3 mt-4">
+              <button
+                @click="cancelEditing"
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                @click="saveEdits"
+                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
