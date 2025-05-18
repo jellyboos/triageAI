@@ -1,4 +1,4 @@
-# Party 4 U
+# TriageAI
 
 A Vue.js application for party planning and management.
 
