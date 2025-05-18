@@ -449,42 +449,6 @@ onMounted(() => {
   fetchOptions()
 })
 
-// Add busyness prediction state
-const busynessData = ref({
-  predictedPatients: null,
-  date: null,
-  timezone: null,
-  error: null,
-})
-
-// Add function to fetch busyness prediction
-const fetchBusynessPrediction = async () => {
-  try {
-    const response = await fetch('http://localhost:3000/api/predict/busyness')
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    const data = await response.json()
-    console.log('API Response:', data)
-    const today = data.predictions.date
-    console.log('Today:', today)
-
-    busynessData.value = {
-      predictedPatients: data.predictions.predicted_busyness,
-      date: data.predictions.date,
-      timezone: null,
-      error: null,
-    }
-  } catch (error) {
-    console.error('Error fetching busyness prediction:', error)
-    busynessData.value = {
-      predictedPatients: null,
-      date: null,
-      timezone: null,
-      error: error.message || 'Unable to fetch prediction',
-    }
-  }
-}
 
 // Call on component mount
 onMounted(() => {
