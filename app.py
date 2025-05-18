@@ -43,16 +43,21 @@ def patient_data():
             dateOfVisit = datetime.now().strftime("%Y-%m-%d")
             
             # Vitals
+            temperature = post_data.get('vitals').get('temperature')
+            pulse = post_data.get('vitals').get('pulse')
+            respiration = post_data.get('vitals').get('respirationRate')
             bloodPressure = None
-            if post_data.get('bloodPressure'):
+            if post_data.get('vitals').get('bloodPressure'):
                 try:
-                    bloodPressure = str(post_data['bloodPressure']['systolic']) + "/" + str(post_data['bloodPressure']['diastolic'])
+                    bp_systolic = post_data.get('vitals').get('bloodPressure')['systolic']
+                    bp_diastolic = post_data.get('vitals').get('bloodPressure')['diastolic']
+                    bloodPressure = str(bp_systolic) + "/" + str(bp_diastolic)
                 except Exception as e:
                     print("Error processing blood pressure:", str(e))
                     bloodPressure = "N/A"
 
             # Symptoms
-            symptoms = post_data.get('symptoms', {})
+            symptoms = post_data.get('symptoms')
             symptom_text = ""
             if symptoms:
                 selected_symptoms = symptoms.get('selected', [])
@@ -62,11 +67,15 @@ def patient_data():
                     symptom_text += f". Additional notes: {notes}"
 
             # Images
-            images = post_data.get('images', [])
             
             try:
                 # Generate ESI
-                model_response = generate_triage(bloodPressure, symptom_text, images).split(" - ")
+                print("Temperature:", temperature)
+                print("Pulse:", pulse)
+                print("Respiration:", respiration)
+                print("Blood pressure:", bloodPressure)
+                print("Symptoms:", symptom_text)
+                model_response = generate_triage(temperature, pulse, respiration, bloodPressure, symptom_text).split(" - ")
                 esi_number = model_response[0]
                 esi_explanation = model_response[1]
                 print("ESI num:", esi_number)
