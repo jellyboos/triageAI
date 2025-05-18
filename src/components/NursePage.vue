@@ -411,31 +411,37 @@ const handleNotificationResponse = (confirmed) => {
           <div class="grid grid-cols-1 gap-8">
             <!-- Symptoms -->
             <div>
-              <div class="flex justify-between items-center mb-2">
-                <h4 class="text-xl font-medium text-gray-700">Symptoms</h4>
+              <div class="flex justify-between items-center mb-4">
+                <h4 class="text-2xl font-semibold text-gray-700">Symptoms</h4>
               </div>
-              <div v-if="!isEditing" class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+              <div
+                v-if="!isEditing"
+                class="text-lg text-gray-900 bg-gray-50 p-6 rounded-lg min-h-[100px]"
+              >
                 {{ selectedPatient.symptoms }}
               </div>
               <textarea
                 v-else
                 v-model="editedSymptoms"
-                class="w-full text-lg text-gray-900 bg-gray-50 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                rows="3"
+                class="w-full text-lg text-gray-900 bg-gray-50 p-6 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px]"
+                rows="4"
               ></textarea>
             </div>
 
             <!-- Notes -->
             <div>
-              <h4 class="text-xl font-medium text-gray-700 mb-2">Notes</h4>
-              <div v-if="!isEditing" class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+              <h4 class="text-2xl font-semibold text-gray-700 mb-4">Notes</h4>
+              <div
+                v-if="!isEditing"
+                class="text-lg text-gray-900 bg-gray-50 p-6 rounded-lg min-h-[150px]"
+              >
                 {{ selectedPatient.notes }}
               </div>
               <textarea
                 v-else
                 v-model="editedNotes"
-                class="w-full text-lg text-gray-900 bg-gray-50 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                rows="5"
+                class="w-full text-lg text-gray-900 bg-gray-50 p-6 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[150px]"
+                rows="6"
               ></textarea>
             </div>
 
@@ -443,13 +449,13 @@ const handleNotificationResponse = (confirmed) => {
             <div v-if="isEditing" class="flex justify-end gap-3 mt-4">
               <button
                 @click="cancelEditing"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                class="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 @click="saveEdits"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                class="px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
               >
                 Save Changes
               </button>
