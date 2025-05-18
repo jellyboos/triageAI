@@ -595,12 +595,12 @@ input:focus {
 
 .submit-button {
   background-color: indigo-600;
-  color: white;
+  color: green;
   padding: 0.75rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.5rem;
   margin-top: 1rem;
   font-weight: 600;
 }
