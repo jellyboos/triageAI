@@ -22,7 +22,41 @@ app = Flask(__name__)
 app.json_encoder = MongoJSONEncoder
 CORS(app)
 
-# MongoDB connection setup
+# Reference options for multi-select fields
+reference_options = {
+    "allergies": [
+        "Penicillin", "Latex", "Peanuts", "Shellfish", "Dairy", 
+        "Eggs", "Soy", "Tree Nuts", "Wheat/Gluten"
+    ],
+    "substance_use": ["Alcohol", "Tobacco", "Recreational Drugs"],
+    "family_history": [
+        "Heart Disease", "Diabetes", "Cancer", "High Blood Pressure", 
+        "Stroke", "Mental Health Conditions", "Asthma", "Arthritis"
+    ],
+    "symptoms": [
+        "Fever", "Cough", "Shortness of breath", "Fatigue", "Headache", 
+        "Muscle aches", "Sore throat", "Loss of taste/smell", "Nausea", "Diarrhea"
+    ]
+}
+
+# Reference options for multi-select fields
+reference_options = {
+    "allergies": [
+        "Penicillin", "Latex", "Peanuts", "Shellfish", "Dairy", 
+        "Eggs", "Soy", "Tree Nuts", "Wheat/Gluten"
+    ],
+    "substance_use": ["Alcohol", "Tobacco", "Recreational Drugs"],
+    "family_history": [
+        "Heart Disease", "Diabetes", "Cancer", "High Blood Pressure", 
+        "Stroke", "Mental Health Conditions", "Asthma", "Arthritis"
+    ],
+    "symptoms": [
+        "Fever", "Cough", "Shortness of breath", "Fatigue", "Headache", 
+        "Muscle aches", "Sore throat", "Loss of taste/smell", "Nausea", "Diarrhea"
+    ]
+}
+
+# MongoDB connection setup 
 try:
     # Connect to local MongoDB instance
     client = MongoClient("mongodb://localhost:27017/")
@@ -36,6 +70,22 @@ try:
         print("Created new patients collection")
     else:
         patients_collection = db["patients"]
+    
+    # Create or update reference options collection
+    if "reference_options" not in db.list_collection_names():
+        reference_options_collection = db.create_collection("reference_options")
+        print("Created new reference_options collection")
+    else:
+        reference_options_collection = db["reference_options"]
+        
+    # Insert reference options if collection is empty
+    if reference_options_collection.count_documents({}) == 0:
+        for category, options in reference_options.items():
+            reference_options_collection.insert_one({
+                "category": category,
+                "options": options
+            })
+        print("Inserted reference options into database")
     
     # Verify connection
     client.admin.command('ping')
@@ -60,6 +110,39 @@ def get_data():
 def post_data():
     data = request.json
     return jsonify({"received": data, "status": "success"})
+
+# API endpoint to get reference options  
+@app.route('/api/options/<category>', methods=['GET'])
+def get_options(category):
+    """Get predefined options for dropdown/checkbox fields."""
+    try:
+        # Check if category is valid
+        valid_categories = ['allergies', 'substance_use', 'family_history', 'symptoms']
+        if category not in valid_categories:
+            return jsonify({
+                "status": "error", 
+                "message": f"Invalid category: {category}"
+            }), 400
+            
+        # Get options from database
+        option_data = reference_options_collection.find_one({"category": category})
+        
+        if option_data:
+            options = option_data.get("options", [])
+        else:
+            # Fallback to hardcoded options if not in database
+            options = reference_options.get(category, [])
+            
+        return jsonify({
+            "status": "success",
+            "options": options
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 # Main patient data endpoint - handles both GET and POST requests
 @app.route('/api/patients', methods=['GET', 'POST'])
@@ -115,6 +198,10 @@ def patient_data():
             medications = post_data.get('medications', [])
             medicalHistory = post_data.get('medicalHistory', [])
             notes = post_data.get('notes', '')
+            
+            # Extract multi-select fields
+            substance_use = post_data.get('substance_use', [])
+            family_history = post_data.get('family_history', [])
 
             try:
                 # Generate ESI
@@ -154,7 +241,10 @@ def patient_data():
                 "status": "waiting",  # Default status
                 "priority": int(esi_number),  # Use ESI as initial priority
                 "esi": esi_number,
-                "esi_explanation": esi_explanation
+                "esi_explanation": esi_explanation,
+                # Add multi-select fields
+                "substance_use": substance_use,
+                "family_history": family_history
             }
 
             # Store patient record in MongoDB

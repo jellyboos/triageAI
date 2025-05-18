@@ -19,7 +19,7 @@ const drag = ref(false)
 
 // Status options
 const statusOptions = [
-  { value: 'waiting', label: 'Waiting' },
+  { value: 'waiting', label: 'Processing' },
   { value: 'in-progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' },
 ]
@@ -37,6 +37,46 @@ const priorityOptions = [
 const patients = ref([])
 const loading = ref(true)
 const error = ref(null)
+
+// Reference options for multi-select fields
+const symptomOptions = ref([])
+const allergyOptions = ref([])
+const substanceUseOptions = ref([])
+const familyHistoryOptions = ref([])
+
+// Fetch options from API
+const fetchOptions = async () => {
+  try {
+    const categories = ['symptoms', 'allergies', 'substance_use', 'family_history']
+    const promises = categories.map((category) =>
+      fetch(`http://localhost:3000/api/options/${category}`).then((response) => response.json()),
+    )
+
+    const results = await Promise.all(promises)
+
+    // Assign options to respective arrays
+    results.forEach((result, index) => {
+      if (result.status === 'success') {
+        switch (categories[index]) {
+          case 'symptoms':
+            symptomOptions.value = result.options
+            break
+          case 'allergies':
+            allergyOptions.value = result.options
+            break
+          case 'substance_use':
+            substanceUseOptions.value = result.options
+            break
+          case 'family_history':
+            familyHistoryOptions.value = result.options
+            break
+        }
+      }
+    })
+  } catch (err) {
+    console.error('Error fetching options:', err)
+  }
+}
 
 // Edit state
 const isEditing = ref(false)
@@ -61,6 +101,10 @@ const editedPatient = reactive({
       diastolic: '',
     },
   },
+  // Add new multi-select fields
+  allergies: [],
+  substance_use: [],
+  family_history: [],
 })
 
 // Process patient data before displaying
@@ -236,6 +280,24 @@ const startEditing = (patient) => {
     }
   }
 
+  // Handle multi-select fields
+  editedPatient.allergies = Array.isArray(patient.allergies) ? [...patient.allergies] : []
+  editedPatient.substance_use = Array.isArray(patient.substance_use)
+    ? [...patient.substance_use]
+    : []
+  editedPatient.family_history = Array.isArray(patient.family_history)
+    ? [...patient.family_history]
+    : []
+
+  // Handle multi-select fields
+  editedPatient.allergies = Array.isArray(patient.allergies) ? [...patient.allergies] : []
+  editedPatient.substance_use = Array.isArray(patient.substance_use)
+    ? [...patient.substance_use]
+    : []
+  editedPatient.family_history = Array.isArray(patient.family_history)
+    ? [...patient.family_history]
+    : []
+
   isEditing.value = true
 }
 
@@ -255,6 +317,9 @@ const saveEdits = async () => {
       notes: editedPatient.notes,
       symptoms: editedPatient.symptoms,
       vitals: editedPatient.vitals,
+      allergies: editedPatient.allergies,
+      substance_use: editedPatient.substance_use,
+      family_history: editedPatient.family_history,
     }
 
     // Save to database
@@ -296,6 +361,12 @@ const getStatusColor = (status) => {
     default:
       return 'bg-gray-100 text-gray-800'
   }
+}
+
+// Get display text for status
+const getStatusLabel = (status) => {
+  const option = statusOptions.find((opt) => opt.value === status)
+  return option ? option.label : status
 }
 
 // Return appropriate Tailwind classes based on priority level
@@ -386,8 +457,13 @@ const formatTime = (time) => {
 
 // Call on component mount
 onMounted(() => {
-  fetchPatients() // Ensure patients are fetched
-  fetchBusynessPrediction() // Ensure busyness prediction is fetched
+  fetchPatients()
+  fetchOptions()
+})
+
+// Call on component mount
+onMounted(() => {
+  fetchBusynessPrediction()
 })
 
 // Add busyness prediction state
@@ -577,7 +653,7 @@ const fetchBusynessPrediction = async () => {
                     'status-badge px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
-                  {{ element.status }}
+                  {{ getStatusLabel(element.status) }}
                 </span>
               </div>
               <!-- Priority badge -->
@@ -663,7 +739,7 @@ const fetchBusynessPrediction = async () => {
                           'px-4 py-2 rounded-full text-lg font-medium',
                         ]"
                       >
-                        ESI Level {{ selectedPatient.esi }}
+                        Priority {{ selectedPatient.priority }}
                       </span>
                       <p class="text-gray-700 text-lg mt-2">
                         {{ selectedPatient.esi_explanation }}
@@ -715,7 +791,7 @@ const fetchBusynessPrediction = async () => {
                         'px-3 py-1 rounded-full text-sm font-medium',
                       ]"
                     >
-                      {{ selectedPatient.status }}
+                      {{ getStatusLabel(selectedPatient.status) }}
                     </span>
                   </div>
                 </div>
@@ -909,6 +985,152 @@ const fetchBusynessPrediction = async () => {
                 <div>
                   <h3 class="text-xl font-semibold text-gray-900 mb-4">Allergies</h3>
                   <div class="bg-gray-50 rounded-lg p-6">
+                    <!-- View Mode -->
+                    <div v-if="!isEditing">
+                      <div v-if="selectedPatient.allergies?.length" class="flex flex-wrap gap-2">
+                        <span
+                          v-for="allergy in selectedPatient.allergies"
+                          :key="allergy"
+                          class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm"
+                        >
+                          {{ allergy }}
+                        </span>
+                      </div>
+                      <p v-else class="text-gray-600">No known allergies</p>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div v-else class="space-y-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1"
+                        >Select Allergies</label
+                      >
+                      <div
+                        class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
+                      >
+                        <div class="grid grid-cols-2 gap-2">
+                          <div
+                            v-for="option in allergyOptions"
+                            :key="option"
+                            class="flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              :id="'allergy-' + option"
+                              :value="option"
+                              v-model="editedPatient.allergies"
+                              class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                            />
+                            <label :for="'allergy-' + option" class="ml-2 text-sm text-gray-700">{{
+                              option
+                            }}</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Substance Use -->
+                <div>
+                  <h3 class="text-xl font-semibold text-gray-900 mb-4">Substance Use</h3>
+                  <div class="bg-gray-50 rounded-lg p-6">
+                    <!-- View Mode -->
+                    <div v-if="!isEditing">
+                      <div
+                        v-if="selectedPatient.substance_use?.length"
+                        class="flex flex-wrap gap-2"
+                      >
+                        <span
+                          v-for="substance in selectedPatient.substance_use"
+                          :key="substance"
+                          class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm"
+                        >
+                          {{ substance }}
+                        </span>
+                      </div>
+                      <p v-else class="text-gray-600">No substance use reported</p>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div v-else class="space-y-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1"
+                        >Select Substance Use</label
+                      >
+                      <div class="bg-white p-4 rounded border border-gray-300">
+                        <div class="space-y-2">
+                          <div
+                            v-for="option in substanceUseOptions"
+                            :key="option"
+                            class="flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              :id="'substance-' + option"
+                              :value="option"
+                              v-model="editedPatient.substance_use"
+                              class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                            />
+                            <label
+                              :for="'substance-' + option"
+                              class="ml-2 text-sm text-gray-700"
+                              >{{ option }}</label
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Family History -->
+                <div>
+                  <h3 class="text-xl font-semibold text-gray-900 mb-4">Family History</h3>
+                  <div class="bg-gray-50 rounded-lg p-6">
+                    <!-- View Mode -->
+                    <div v-if="!isEditing">
+                      <div
+                        v-if="selectedPatient.family_history?.length"
+                        class="flex flex-wrap gap-2"
+                      >
+                        <span
+                          v-for="condition in selectedPatient.family_history"
+                          :key="condition"
+                          class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
+                        >
+                          {{ condition }}
+                        </span>
+                      </div>
+                      <p v-else class="text-gray-600">No family history reported</p>
+                    </div>
+
+                    <!-- Edit Mode -->
+                    <div v-else class="space-y-4">
+                      <label class="block text-sm font-medium text-gray-700 mb-1"
+                        >Select Family History</label
+                      >
+                      <div
+                        class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
+                      >
+                        <div class="grid grid-cols-2 gap-2">
+                          <div
+                            v-for="option in familyHistoryOptions"
+                            :key="option"
+                            class="flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              :id="'family-' + option"
+                              :value="option"
+                              v-model="editedPatient.family_history"
+                              class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                            />
+                            <label :for="'family-' + option" class="ml-2 text-sm text-gray-700">{{
+                              option
+                            }}</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     <div v-if="selectedPatient.allergies?.length" class="space-y-2">
                       <div
                         v-for="allergy in selectedPatient.allergies"
@@ -959,6 +1181,122 @@ const fetchBusynessPrediction = async () => {
 
                     <!-- Edit Mode -->
                     <div v-else-if="isEditing" class="space-y-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"
+                          >Select Symptoms</label
+                        >
+                        <div
+                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
+                        >
+                          <div class="grid grid-cols-2 gap-2">
+                            <div
+                              v-for="option in symptomOptions"
+                              :key="option"
+                              class="flex items-center"
+                            >
+                              <input
+                                type="checkbox"
+                                :id="'symptom-' + option"
+                                :value="option"
+                                v-model="editedPatient.symptoms.selected"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                              />
+                              <label
+                                :for="'symptom-' + option"
+                                class="ml-2 text-sm text-gray-700"
+                                >{{ option }}</label
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"
+                          >Select Symptoms</label
+                        >
+                        <div
+                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
+                        >
+                          <div class="grid grid-cols-2 gap-2">
+                            <div
+                              v-for="option in symptomOptions"
+                              :key="option"
+                              class="flex items-center"
+                            >
+                              <input
+                                type="checkbox"
+                                :id="'symptom-' + option"
+                                :value="option"
+                                v-model="editedPatient.symptoms.selected"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                              />
+                              <label
+                                :for="'symptom-' + option"
+                                class="ml-2 text-sm text-gray-700"
+                                >{{ option }}</label
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"
+                          >Select Symptoms</label
+                        >
+                        <div
+                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
+                        >
+                          <div class="grid grid-cols-2 gap-2">
+                            <div
+                              v-for="option in symptomOptions"
+                              :key="option"
+                              class="flex items-center"
+                            >
+                              <input
+                                type="checkbox"
+                                :id="'symptom-' + option"
+                                :value="option"
+                                v-model="editedPatient.symptoms.selected"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                              />
+                              <label
+                                :for="'symptom-' + option"
+                                class="ml-2 text-sm text-gray-700"
+                                >{{ option }}</label
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"
+                          >Select Symptoms</label
+                        >
+                        <div
+                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
+                        >
+                          <div class="grid grid-cols-2 gap-2">
+                            <div
+                              v-for="option in symptomOptions"
+                              :key="option"
+                              class="flex items-center"
+                            >
+                              <input
+                                type="checkbox"
+                                :id="'symptom-' + option"
+                                :value="option"
+                                v-model="editedPatient.symptoms.selected"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                              />
+                              <label
+                                :for="'symptom-' + option"
+                                class="ml-2 text-sm text-gray-700"
+                                >{{ option }}</label
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1"
                           >Symptoms Description</label

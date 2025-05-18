@@ -1,0 +1,47 @@
+{
+  "_id": "60d21b4667d0d8992e610c85",
+  "firstName": "John",
+  "lastName": "Smith",
+  "age": 45,
+  "dateOfBirth": "1978-03-15",
+  "phoneNumber": "555-123-4567",
+  "timeEntered": "2023-10-25T14:30:45",
+  "dateOfVisit": "2023-10-25",
+  "vitals": {
+    "temperature": 99.6,
+    "pulse": 82,
+    "respirationRate": 18,
+    "bloodPressure": {
+      "systolic": 130,
+      "diastolic": 85
+    }
+  },
+  "bloodPressure": "130/85",
+  "symptoms": {
+    "selected": ["Fever", "Cough", "Fatigue"],
+    "notes": "Symptoms started two days ago and are getting worse at night."
+  },
+  "symptom_text": "Fever, Cough, Fatigue. Symptoms started two days ago and are getting worse at night.",
+  "allergies": ["Penicillin", "Latex"],
+  "medications": [
+    {
+      "name": "Lisinopril",
+      "dosage": "10mg",
+      "frequency": "Once daily"
+    }
+  ],
+  "medicalHistory": [
+    {
+      "condition": "Hypertension",
+      "diagnosisDate": "2020-05-10",
+      "status": "active"
+    }
+  ],
+  "status": "waiting",
+  "priority": 3,
+  "esi": "3",
+  "esi_explanation": "Requires multiple resources, stable vital signs",
+  "substance_use": ["Alcohol"],
+  "family_history": ["Heart Disease", "Diabetes"],
+  "notes": "Patient is concerned about worsening cough. Has a history of seasonal allergies."
+} 
