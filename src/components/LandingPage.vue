@@ -75,15 +75,15 @@ const esiLevels = [
             → Nurse verification → Faster, smarter care.
           </p>
           <!-- CTA Button -->
-          <div class="flex justify-center items-center mt-8">
+          <div class="flex justify-center items-center mt-8 text-center">
             <button
               @click="navigateTo('patient')"
-              class="group relative px-8 py-4 bg-white text-indigo-600 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              class="group relative px-8 py-4 bg-white text-indigo-600 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-center"
             >
-              <span class="relative z-10 text-2xl font-semibold">Patient Check-in</span>
-              <div
+              <span class="relative z-10 text-2xl font-semibold text-center">Patient Check-in</span>
+              <!-- <div
                 class="absolute inset-0 bg-indigo-600 rounded-xl transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"
-              ></div>
+              ></div> -->
               <span
                 class="relative z-10 text-2xl font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 >Patient Check-in</span
@@ -110,7 +110,7 @@ const esiLevels = [
         </div>
 
         <!-- Features Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-16">
           <div
             class="bg-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
           >
@@ -125,14 +125,6 @@ const esiLevels = [
             <h3 class="text-2xl font-bold text-indigo-600 mb-3">Smart Queue Management</h3>
             <p class="text-lg text-gray-600">
               Real-time queue optimization with priority re-evaluation
-            </p>
-          </div>
-          <div
-            class="bg-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
-          >
-            <h3 class="text-2xl font-bold text-indigo-600 mb-3">Analytics Dashboard</h3>
-            <p class="text-lg text-gray-600">
-              Real-time stats and AI forecasting for better resource allocation
             </p>
           </div>
         </div>
