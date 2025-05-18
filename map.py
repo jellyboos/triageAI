@@ -50,7 +50,12 @@ def find_nearest_emergency_rooms(radius=5000, max_results=5):
 
         # Extract and return names of hospitals
         emergency_rooms = [
-            place["name"]
+            {
+                'name': place['name'],
+                'vicinity': place.get('vicinity', place.get('formatted_address', '')),
+                'place_id': place.get('place_id', ''),
+                # add more fields if needed
+            }
             for place in results.get("results", [])[:max_results]
         ]
 
@@ -67,4 +72,4 @@ if __name__ == "__main__":
     er_list = find_nearest_emergency_rooms()
     print("Nearest Emergency Rooms:")
     for i, name in enumerate(er_list, 1):
-        print(f"{i}. {name}")
+        print(f"{i}. {name['name']} - {name['vicinity']}")
