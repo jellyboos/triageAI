@@ -8,9 +8,12 @@ app = Flask(__name__)
 CORS(app)
 
 # MongoDB connection set up
-client = MongoClient("mongodb://localhost:27017/")
-db = client["patientdb"]
-patients_collection = db["patients"]
+try:
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client["patientdb"]
+    patients_collection = db["patient"]
+except Exception as e:
+    print("MongoDB connection error:", str(e))
 
 @app.route('/')
 def LandingPage():
@@ -28,87 +31,88 @@ def post_data():
 @app.route('/api/patients', methods=['GET', 'POST'])
 def patient_data():
     if request.method == 'POST':
-        post_data = request.get_json()
-        
-        # Create patient document
-        patient_doc = {
-            # Personal Information
-            'firstName': post_data.get('firstName'),
-            'lastName': post_data.get('lastName'),
-            'dateOfVisit': datetime.now().strftime("%Y-%m-%d"),
-            'dateOfBirth': post_data.get('dateOfBirth'),
-            'phoneNumber': post_data.get('phoneNumber'),
-            
-            # Medical Information/Vitals
-            'vitals': {
-                'temperature': post_data.get('vitals', {}).get('temperature'),
-                'pulse': post_data.get('vitals', {}).get('pulse'),
-                'respirationRate': post_data.get('vitals', {}).get('respirationRate'),
-                'bloodPressure': post_data.get('vitals', {}).get('bloodPressure')
-            },
-            
-            # Allergies and Medications
-            'allergies': {
-                'selected': post_data.get('allergies', {}).get('selected', []),
-                'other': post_data.get('allergies', {}).get('other')
-            },
-            'medications': {
-                'current': post_data.get('medications', {}).get('current')
-            },
-            
-            # Medical History
-            'medicalHistory': {
-                'substanceUse': post_data.get('medicalHistory', {}).get('substanceUse', {}),
-                'familyHistory': post_data.get('medicalHistory', {}).get('familyHistory', {}),
-                'surgeries': post_data.get('medicalHistory', {}).get('surgeries'),
-                'complications': post_data.get('medicalHistory', {}).get('complications')
-            },
-            
-            # Symptoms
-            'symptoms': post_data.get('symptoms', {}),
-            
-            # Metadata
-            'createdAt': datetime.now(),
-            'updatedAt': datetime.now()
-        }
-        
-        # Insert into MongoDB
         try:
-            result = patients_collection.insert_one(patient_doc)
-            print(f"Patient document inserted with id: {result.inserted_id}")
+            post_data = request.get_json()
+            print("Received data:", post_data)  # Debug print
             
-            # Generate triage data if needed
-            blood_pressure = f"{patient_doc['vitals']['bloodPressure']['systolic']}/{patient_doc['vitals']['bloodPressure']['diastolic']}"
-            symptoms = patient_doc['symptoms']
-            model_response = generate_triage(blood_pressure, symptoms, [])
-            esi_data = model_response.split(" - ")
+            # Personal Info
+            firstName = post_data.get('firstName')
+            lastName = post_data.get('lastName')
+            age = post_data.get('age')
+            timeEntered = datetime.now().strftime("%H:%M")
+            dateOfVisit = datetime.now().strftime("%Y-%m-%d")
             
-            # Update document with triage data
-            patients_collection.update_one(
-                {'_id': result.inserted_id},
-                {
-                    '$set': {
-                        'triage': {
-                            'esiNumber': esi_data[0],
-                            'explanation': esi_data[1]
-                        }
-                    }
-                }
-            )
+            # Vitals
+            bloodPressure = None
+            if post_data.get('bloodPressure'):
+                try:
+                    bloodPressure = str(post_data['bloodPressure']['systolic']) + "/" + str(post_data['bloodPressure']['diastolic'])
+                except Exception as e:
+                    print("Error processing blood pressure:", str(e))
+                    bloodPressure = "N/A"
+
+            # Symptoms
+            symptoms = post_data.get('symptoms', {})
+            symptom_text = ""
+            if symptoms:
+                selected_symptoms = symptoms.get('selected', [])
+                notes = symptoms.get('notes', '')
+                symptom_text = ", ".join(selected_symptoms)
+                if notes:
+                    symptom_text += f". Additional notes: {notes}"
+
+            # Images
+            images = post_data.get('images', [])
             
+            try:
+                # Generate ESI
+                model_response = generate_triage(bloodPressure, symptom_text, images).split(" - ")
+                esi_number = model_response[0]
+                esi_explanation = model_response[1]
+                print("ESI num:", esi_number)
+                print("ESI explanation:", esi_explanation)
+            except Exception as e:
+                print("Error in generate_triage:", str(e))
+                return jsonify({
+                    "status": "error",
+                    "message": f"Error generating triage: {str(e)}"
+                }), 500
+
+            # Create patient record
+            patient_record = {
+                "firstName": firstName,
+                "lastName": lastName,
+                "age": age,
+                "timeEntered": timeEntered,
+                "dateOfVisit": dateOfVisit,
+                "bloodPressure": bloodPressure,
+                "symptoms": symptom_text,
+                "esi": esi_number,
+                "esi_explanation": esi_explanation
+            }
+
+            try:
+                # Add to database
+                patients_collection.insert_one(patient_record)
+            except Exception as e:
+                print("Database error:", str(e))
+                # Continue even if database insert fails
+                pass
+
             return jsonify({
                 "status": "success",
-                "message": "Patient data received and stored!",
-                "id": str(result.inserted_id)
-            }), 201
-            
+                "message": "Patient data received!",
+                "esi": esi_number,
+                "explanation": esi_explanation
+            })
+
         except Exception as e:
-            print(f"Error storing patient data: {str(e)}")
+            print("Error processing request:", str(e))
             return jsonify({
                 "status": "error",
-                "message": "Failed to store patient data"
+                "message": f"Server error: {str(e)}"
             }), 500
-            
+
     # GET method
     elif request.method == 'GET':
         try:
@@ -157,5 +161,5 @@ def update_patient(patient_id):
         }), 500
 
 if __name__ == "__main__":
-    print("Starting Flask server on port 3000...")
+    print("Starting Flask server on port 3000...") # Debug log
     app.run(debug=True, port=3000, host='0.0.0.0')
