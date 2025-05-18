@@ -5,25 +5,81 @@ import SuccessModal from './SuccessModal.vue'
 const emit = defineEmits(['navigate'])
 
 const patient = ref({
+  // Personal Information
   firstName: '',
   lastName: '',
-  age: '',
-  bloodPressure: {
-    systolic: '',
-    diastolic: '',
+  dateOfVisit: new Date().toISOString().split('T')[0],
+  dateOfBirth: '',
+  phoneNumber: '',
+
+  // Medical Information/Vitals
+  vitals: {
+    temperature: '',
+    pulse: '',
+    respirationRate: '',
+    bloodPressure: {
+      systolic: '',
+      diastolic: '',
+    }
   },
+
+  // Allergies and Medications
+  allergies: {
+    selected: [],
+    other: ''
+  },
+  medications: {
+    current: '',
+  },
+
+  // Medical History
+  medicalHistory: {
+    substanceUse: {
+      alcohol: false,
+      tobacco: false,
+      recreationalDrugs: false
+    },
+    familyHistory: {
+      selected: [],
+      other: ''
+    },
+    surgeries: '',
+    complications: ''
+  },
+
+  // Current Symptoms
   symptoms: {
     selected: [],
-    notes: '',
+    notes: ''
   },
-  images: [],
+
+  // Images (if needed)
+  images: []
 })
 
-const loading = ref(false)
-const error = ref(null)
-const showSuccessModal = ref(false)
-const isDragging = ref(false)
-const imageError = ref(null)
+// Common options for dropdowns
+const commonAllergies = [
+  'Penicillin',
+  'Latex',
+  'Peanuts',
+  'Shellfish',
+  'Dairy',
+  'Eggs',
+  'Soy',
+  'Tree Nuts',
+  'Wheat/Gluten'
+]
+
+const commonFamilyHistory = [
+  'Heart Disease',
+  'Diabetes',
+  'Cancer',
+  'High Blood Pressure',
+  'Stroke',
+  'Mental Health Conditions',
+  'Asthma',
+  'Arthritis'
+]
 
 const commonSymptoms = [
   'Fever',
@@ -35,8 +91,14 @@ const commonSymptoms = [
   'Sore throat',
   'Loss of taste/smell',
   'Nausea',
-  'Diarrhea',
+  'Diarrhea'
 ]
+
+const loading = ref(false)
+const error = ref(null)
+const showSuccessModal = ref(false)
+const isDragging = ref(false)
+const imageError = ref(null)
 
 const submitForm = async () => {
   loading.value = true
@@ -49,32 +111,57 @@ const submitForm = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(patient.value),
+      body: JSON.stringify(patient.value)
     })
 
-    console.log('Response status:', response.status)
     if (!response.ok) {
       throw new Error(`Server responded with status: ${response.status}`)
     }
 
     const data = await response.json()
-    console.log('Response data:', data)
     showSuccessModal.value = true
 
-    // Reset form
+    // Reset form with empty values but keep the structure
     patient.value = {
       firstName: '',
       lastName: '',
-      age: '',
-      bloodPressure: {
-        systolic: '',
-        diastolic: '',
+      dateOfVisit: new Date().toISOString().split('T')[0],
+      dateOfBirth: '',
+      phoneNumber: '',
+      vitals: {
+        temperature: '',
+        pulse: '',
+        respirationRate: '',
+        bloodPressure: {
+          systolic: '',
+          diastolic: '',
+        }
+      },
+      allergies: {
+        selected: [],
+        other: ''
+      },
+      medications: {
+        current: '',
+      },
+      medicalHistory: {
+        substanceUse: {
+          alcohol: false,
+          tobacco: false,
+          recreationalDrugs: false
+        },
+        familyHistory: {
+          selected: [],
+          other: ''
+        },
+        surgeries: '',
+        complications: ''
       },
       symptoms: {
         selected: [],
-        notes: '',
+        notes: ''
       },
-      images: [],
+      images: []
     }
   } catch (err) {
     error.value = err.message || 'Failed to submit patient data'
@@ -146,77 +233,234 @@ const removeImage = (index) => {
     <h2>Patient Information</h2>
 
     <form @submit.prevent="submitForm" class="patient-form">
-      <div class="form-group">
-        <label for="firstName">First Name</label>
-        <input
-          id="firstName"
-          v-model="patient.firstName"
-          type="text"
-          required
-          placeholder="Enter first name"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="lastName">Last Name</label>
-        <input
-          id="lastName"
-          v-model="patient.lastName"
-          type="text"
-          required
-          placeholder="Enter last name"
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="age">Age</label>
-        <input
-          id="age"
-          v-model="patient.age"
-          type="number"
-          required
-          min="0"
-          max="120"
-          placeholder="Enter age"
-        />
-      </div>
-
-      <div class="form-group">
-        <label>Blood Pressure</label>
-        <div class="bp-note">Please obtain blood pressure with nurse</div>
-        <div class="blood-pressure-inputs">
-          <div class="bp-input">
+      <!-- Personal Information Section -->
+      <section class="form-section">
+        <h3>Personal Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
             <input
-              id="systolic"
-              v-model="patient.bloodPressure.systolic"
-              type="number"
+              id="firstName"
+              v-model="patient.firstName"
+              type="text"
               required
-              min="60"
-              max="250"
-              placeholder="Systolic"
-            />
-            <span class="bp-separator">/</span>
-          </div>
-          <div class="bp-input">
-            <input
-              id="diastolic"
-              v-model="patient.bloodPressure.diastolic"
-              type="number"
-              required
-              min="40"
-              max="150"
-              placeholder="Diastolic"
+              placeholder="Enter first name"
             />
           </div>
-          <span class="bp-unit">mmHg</span>
+
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input
+              id="lastName"
+              v-model="patient.lastName"
+              type="text"
+              required
+              placeholder="Enter last name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="dateOfBirth">Date of Birth</label>
+            <input
+              id="dateOfBirth"
+              v-model="patient.dateOfBirth"
+              type="date"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input
+              id="phoneNumber"
+              v-model="patient.phoneNumber"
+              type="tel"
+              required
+              placeholder="(XXX) XXX-XXXX"
+            />
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="form-group">
-        <label>Symptoms</label>
-        <div class="symptoms-container">
-          <div class="symptoms-grid">
-            <div v-for="symptom in commonSymptoms" :key="symptom" class="symptom-checkbox">
+      <!-- Vitals Section -->
+      <section class="form-section">
+        <h3>Medical Information/Vitals</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="temperature">Temperature (°F)</label>
+            <input
+              id="temperature"
+              v-model="patient.vitals.temperature"
+              type="number"
+              step="0.1"
+              required
+              placeholder="98.6"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="pulse">Pulse (bpm)</label>
+            <input
+              id="pulse"
+              v-model="patient.vitals.pulse"
+              type="number"
+              required
+              placeholder="Enter pulse rate"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="respirationRate">Respiration Rate (breaths/min)</label>
+            <input
+              id="respirationRate"
+              v-model="patient.vitals.respirationRate"
+              type="number"
+              required
+              placeholder="Enter respiration rate"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Blood Pressure (mmHg)</label>
+            <div class="blood-pressure-inputs">
+              <input
+                id="systolic"
+                v-model="patient.vitals.bloodPressure.systolic"
+                type="number"
+                required
+                placeholder="Systolic"
+              />
+              <span class="bp-separator">/</span>
+              <input
+                id="diastolic"
+                v-model="patient.vitals.bloodPressure.diastolic"
+                type="number"
+                required
+                placeholder="Diastolic"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Allergies and Medications Section -->
+      <section class="form-section">
+        <h3>Allergies and Medications</h3>
+
+        <div class="form-group">
+          <label>Known Allergies</label>
+          <div class="checkbox-grid">
+            <div v-for="allergy in commonAllergies" :key="allergy" class="checkbox-item">
+              <input
+                type="checkbox"
+                :id="allergy"
+                :value="allergy"
+                v-model="patient.allergies.selected"
+              />
+              <label :for="allergy">{{ allergy }}</label>
+            </div>
+          </div>
+          <input
+            v-model="patient.allergies.other"
+            type="text"
+            placeholder="Other allergies..."
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="medications">Current Medications</label>
+          <textarea
+            id="medications"
+            v-model="patient.medications.current"
+            placeholder="List all current medications..."
+            rows="3"
+          ></textarea>
+        </div>
+      </section>
+
+      <!-- Medical History Section -->
+      <section class="form-section">
+        <h3>Medical History</h3>
+
+        <div class="form-group">
+          <label>Substance Use</label>
+          <div class="checkbox-grid">
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="alcohol"
+                v-model="patient.medicalHistory.substanceUse.alcohol"
+              />
+              <label for="alcohol">Alcohol</label>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="tobacco"
+                v-model="patient.medicalHistory.substanceUse.tobacco"
+              />
+              <label for="tobacco">Tobacco</label>
+            </div>
+            <div class="checkbox-item">
+              <input
+                type="checkbox"
+                id="recreationalDrugs"
+                v-model="patient.medicalHistory.substanceUse.recreationalDrugs"
+              />
+              <label for="recreationalDrugs">Recreational Drugs</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Family Health History</label>
+          <div class="checkbox-grid">
+            <div v-for="condition in commonFamilyHistory" :key="condition" class="checkbox-item">
+              <input
+                type="checkbox"
+                :id="condition"
+                :value="condition"
+                v-model="patient.medicalHistory.familyHistory.selected"
+              />
+              <label :for="condition">{{ condition }}</label>
+            </div>
+          </div>
+          <input
+            v-model="patient.medicalHistory.familyHistory.other"
+            type="text"
+            placeholder="Other family health conditions..."
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="surgeries">Previous Surgeries</label>
+          <textarea
+            id="surgeries"
+            v-model="patient.medicalHistory.surgeries"
+            placeholder="List any previous surgeries..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="complications">Health Complications</label>
+          <textarea
+            id="complications"
+            v-model="patient.medicalHistory.complications"
+            placeholder="List any health complications..."
+            rows="3"
+          ></textarea>
+        </div>
+      </section>
+
+      <!-- Symptoms Section -->
+      <section class="form-section">
+        <h3>Current Symptoms</h3>
+
+        <div class="form-group">
+          <label>Common Symptoms</label>
+          <div class="checkbox-grid">
+            <div v-for="symptom in commonSymptoms" :key="symptom" class="checkbox-item">
               <input
                 type="checkbox"
                 :id="symptom"
@@ -226,52 +470,18 @@ const removeImage = (index) => {
               <label :for="symptom">{{ symptom }}</label>
             </div>
           </div>
-          <div class="symptoms-notes">
-            <label for="symptomsNotes">Additional Notes</label>
-            <textarea
-              id="symptomsNotes"
-              v-model="patient.symptoms.notes"
-              placeholder="Describe any other symptoms or concerns..."
-              rows="3"
-            ></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Medical Images</label>
-        <div
-          class="image-upload-area"
-          :class="{ dragging: isDragging }"
-          @dragover="handleDragOver"
-          @dragleave="handleDragLeave"
-          @drop="handleDrop"
-        >
-          <input
-            type="file"
-            id="imageUpload"
-            accept="image/*"
-            multiple
-            @change="handleFileSelect"
-            class="file-input"
-          />
-          <div class="upload-content">
-            <div class="upload-icon">📁</div>
-            <p>Drag & drop images here or click to select</p>
-            <p class="upload-hint">Supports: JPG, PNG, GIF</p>
-          </div>
         </div>
 
-        <div v-if="imageError" class="error-message">{{ imageError }}</div>
-
-        <div v-if="patient.images.length > 0" class="image-preview-grid">
-          <div v-for="(image, index) in patient.images" :key="index" class="image-preview">
-            <img :src="image.data" :alt="image.name" />
-            <button class="remove-image" @click="removeImage(index)">×</button>
-            <span class="image-name">{{ image.name }}</span>
-          </div>
+        <div class="form-group">
+          <label for="symptomNotes">Additional Symptoms/Notes</label>
+          <textarea
+            id="symptomNotes"
+            v-model="patient.symptoms.notes"
+            placeholder="Describe any other symptoms or concerns..."
+            rows="3"
+          ></textarea>
         </div>
-      </div>
+      </section>
 
       <div v-if="error" class="error-message">{{ error }}</div>
 
@@ -328,6 +538,49 @@ const removeImage = (index) => {
 .patient-form:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-section h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #f8f8f8;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.checkbox-item:hover {
+  background: #f0f0f0;
+  transform: translateX(3px);
 }
 
 .form-group {
@@ -416,33 +669,11 @@ input:focus {
   transform: translateX(5px);
 }
 
-.bp-input {
-  display: flex;
-  align-items: center;
-}
-
-.bp-input input {
-  width: 80px;
-}
-
 .bp-separator {
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0 0.25rem;
   color: #666;
-}
-
-.bp-unit {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.bp-note {
-  color: #666;
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
-  font-style: italic;
-  transition: color 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -469,170 +700,6 @@ input:focus {
   }
 }
 
-.symptoms-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.symptoms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.75rem;
-}
-
-.symptom-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: #f8f8f8;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-}
-
-.symptom-checkbox:hover {
-  background: #f0f0f0;
-  transform: translateX(3px);
-}
-
-.symptom-checkbox input[type='checkbox'] {
-  width: auto;
-  margin: 0;
-}
-
-.symptom-checkbox label {
-  font-weight: normal;
-  margin: 0;
-  cursor: pointer;
-}
-
-.symptoms-notes {
-  margin-top: 1rem;
-}
-
-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-family: inherit;
-  resize: vertical;
-  transition: all 0.3s ease;
-  background: #f8f8f8;
-}
-
-textarea:focus {
-  outline: none;
-  border-color: #4caf50;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.image-upload-area {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: #f8f8f8;
-  position: relative;
-}
-
-.image-upload-area.dragging {
-  border-color: #4caf50;
-  background: rgba(76, 175, 80, 0.1);
-}
-
-.file-input {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.upload-content {
-  pointer-events: none;
-}
-
-.upload-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
-.upload-hint {
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: 0.5rem;
-}
-
-.image-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.image-preview {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.image-preview:hover {
-  transform: translateY(-2px);
-}
-
-.image-preview img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  display: block;
-}
-
-.remove-image {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  text-align: center;
-  cursor: pointer;
-  font-size: 1.2rem;
-  color: #ff4444;
-  transition: all 0.3s ease;
-}
-
-.remove-image:hover {
-  background: #ff4444;
-  color: white;
-}
-
-.image-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 h2 {
   font-size: 2.5rem;
   margin-bottom: 1.5rem;
@@ -640,3 +707,4 @@ h2 {
   font-weight: 700;
 }
 </style>
+

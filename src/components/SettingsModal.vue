@@ -1,12 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const props = defineProps({
-  show: {
-    type: Boolean,
-    required: true,
-  },
-})
+// const props = defineProps({
+//   show: {
+//     type: Boolean,
+//     required: true,
+//   },
+// })
 
 const emit = defineEmits(['close'])
 
