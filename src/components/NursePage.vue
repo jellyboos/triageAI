@@ -384,9 +384,10 @@ const formatTime = (time) => {
   })
 }
 
-// Fetch patients on component mount
+// Call on component mount
 onMounted(() => {
-  fetchPatients()
+  fetchPatients() // Ensure patients are fetched
+  fetchBusynessPrediction() // Ensure busyness prediction is fetched
 })
 
 // Add busyness prediction state
@@ -425,11 +426,6 @@ const fetchBusynessPrediction = async () => {
     }
   }
 }
-
-// Call on component mount
-onMounted(() => {
-  fetchBusynessPrediction()
-})
 </script>
 
 <template>
