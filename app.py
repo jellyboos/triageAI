@@ -35,24 +35,25 @@ def patient_data():
         lastName = post_data.get('lastName')
         age = post_data.get('age')
         timeEntered = datetime.now().strftime("%H:%M")
-        # dateOfVisit = datetime.now().strftime("%Y-%m-%d")
-        # dob = post_data.get('dob')
-        # phoneNumber = post_data.get('phoneNumber')
-        # allergies = post_data.get('allergies')
-        # meds = post_data.get('meds')
+        dateOfVisit = datetime.now().strftime("%Y-%m-%d")
         
-        # # Vitals
+        # Vitals
         # temp = post_data.get('temp')
         # pulse = post_data.get('pulse')
         # respiration = post_data.get('respiration')
-        # bloodPressure = post_data.get('bloodPressure')
+        bloodPressure = str(post_data.get('bloodPressure')['systolic']) + "/" + str(post_data.get('bloodPressure')['diastolic'])
 
         # Symptoms
+        symptoms = post_data.get('symptoms')
+
+        # Images
+        images = post_data.get('images')
         # Take Symptoms and generate ESI
-        # model_response = generate_triage(temp, pulse, respiration, bloodPressure, symptoms).split(" - ")
-        # esi_number = model_response[0]
-        # esi_explanation = model_response[1]
-        # print(esi_number, esi_explanation)
+        model_response = generate_triage(bloodPressure, symptoms, images).split(" - ")
+        esi_number = model_response[0]
+        esi_explanation = model_response[1]
+        print("ESI num:", esi_number)
+        print("ESI explanation:", esi_explanation)
         # Add user to database
         return jsonify({"status": "success", "message": "Patient data received!"})
     return jsonify({"status": "success", "message": "Patient data received!"})
