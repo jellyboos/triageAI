@@ -1473,7 +1473,7 @@ const googleMapsEmbedUrl = computed(() => {
                         </div>
                       </div>
                     </div>
-                    <div v-if="selectedPatient.allergies?.length" class="space-y-2">
+                    <!-- <div v-if="selectedPatient.allergies?.length" class="space-y-2">
                       <div
                         v-for="allergy in selectedPatient.allergies"
                         :key="allergy.name"
@@ -1483,7 +1483,7 @@ const googleMapsEmbedUrl = computed(() => {
                         <p class="text-sm text-gray-600">{{ allergy.reaction }}</p>
                       </div>
                     </div>
-                    <p v-else class="text-gray-600">No known allergies</p>
+                    <p v-else class="text-gray-600">No known allergies</p>-->
                   </div>
                 </div>
               </div>
