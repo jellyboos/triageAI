@@ -551,6 +551,164 @@ const updatePatientStatus = async (patient, newStatus) => {
     console.error('Failed to update patient status:', err)
   }
 }
+
+// State for emergency rooms modal
+const showEmergencyRoomsModal = ref(false)
+const emergencyRoomsData = ref([])
+const loadingEmergencyRooms = ref(false)
+const errorEmergencyRooms = ref(null)
+
+// Add state for selected hospital and map query
+const selectedRelocationHospital = ref(null)
+const mapQuery = ref('')
+
+// Fetch emergency rooms
+const fetchEmergencyRooms = async () => {
+  loadingEmergencyRooms.value = true
+  errorEmergencyRooms.value = null
+  selectedRelocationHospital.value = null // Reset selection
+  try {
+    const response = await fetch('http://localhost:3000/api/emergency-rooms')
+    if (!response.ok) {
+      throw new Error('Failed to fetch emergency rooms')
+    }
+    const data = await response.json()
+
+    let processedRooms = []
+    if (data.status === 'success' && Array.isArray(data.emergency_rooms)) {
+      processedRooms = data.emergency_rooms
+    } else if (Array.isArray(data)) {
+      processedRooms = data
+    } else {
+      console.warn('Emergency rooms data might not be in the expected array format:', data)
+      errorEmergencyRooms.value =
+        data.message || 'Received data is not in the expected array format or is empty.'
+    }
+
+    // Filter for objects with at least a name property, or strings
+    emergencyRoomsData.value = processedRooms
+      .map((room) => {
+        if (typeof room === 'string') return { name: room, vicinity: '' } // Convert strings to basic objects
+        if (typeof room === 'object' && room !== null && room.name) return room
+        return null
+      })
+      .filter((room) => room !== null)
+
+    if (emergencyRoomsData.value.length > 0) {
+      // Set initial map query to the first hospital or a general area
+      mapQuery.value = emergencyRoomsData.value[0].vicinity
+        ? `${emergencyRoomsData.value[0].name}, ${emergencyRoomsData.value[0].vicinity}`
+        : emergencyRoomsData.value[0].name
+    } else {
+      mapQuery.value = 'United States' // Default if no rooms
+      if (!errorEmergencyRooms.value) {
+        // errorEmergencyRooms.value = "No emergency rooms found after processing."; // Optionally set error
+        console.warn('Processed emergency rooms data is empty.')
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching emergency rooms:', err)
+    errorEmergencyRooms.value = err.message
+    emergencyRoomsData.value = []
+    mapQuery.value = 'United States' // Default on error
+  } finally {
+    loadingEmergencyRooms.value = false
+  }
+}
+
+// Open emergency rooms modal
+const openRelocateModal = () => {
+  fetchEmergencyRooms() // Fetch data when modal is opened
+  showEmergencyRoomsModal.value = true
+}
+
+// Close emergency rooms modal
+const closeRelocateModal = () => {
+  showEmergencyRoomsModal.value = false
+  emergencyRoomsData.value = []
+  errorEmergencyRooms.value = null
+  selectedRelocationHospital.value = null // Reset selected hospital
+  mapQuery.value = '' // Reset map query
+}
+
+// Select a hospital for relocation
+const selectHospitalForRelocation = (hospital) => {
+  selectedRelocationHospital.value = hospital
+  // Use name and vicinity for a more specific map query if available
+  if (hospital && hospital.name && hospital.vicinity) {
+    mapQuery.value = `${hospital.name}, ${hospital.vicinity}`
+  } else if (hospital && hospital.name) {
+    mapQuery.value = hospital.name
+  } else {
+    // Fallback if hospital object or its properties are not as expected
+    mapQuery.value = 'United States' // Default query
+  }
+}
+
+// Confirm patient relocation
+const confirmPatientRelocation = async () => {
+  if (!selectedRelocationHospital.value || !selectedPatient.value) {
+    console.error('No hospital selected or patient details missing.')
+    // Optionally show a user-facing error notification here
+    notificationMessage.value = 'Please select a hospital first.'
+    showNotification.value = true // Assuming you have a general notification system
+    // Hide notification after a few seconds
+    setTimeout(() => {
+      showNotification.value = false
+    }, 3000)
+    return
+  }
+
+  try {
+    const patientId = selectedPatient.value.id
+    const response = await fetch(`http://localhost:3000/api/patients/${patientId}/relocate`, {
+      method: 'DELETE',
+    })
+
+    const responseData = await response.json()
+
+    if (response.ok && responseData.status === 'success') {
+      notificationMessage.value = `Patient ${selectedPatient.value.firstName} ${selectedPatient.value.lastName} relocated successfully.`
+      showNotification.value = true
+      setTimeout(() => {
+        showNotification.value = false
+      }, 4000)
+
+      await fetchPatients() // Refresh the main patient list
+      closeRelocateModal() // Close the relocation modal
+      closePatientDetail() // Close the patient detail modal as patient is gone
+    } else {
+      throw new Error(responseData.message || 'Failed to relocate patient')
+    }
+  } catch (err) {
+    console.error('Error relocating patient:', err)
+    notificationMessage.value = `Error: ${err.message}`
+    showNotification.value = true
+    setTimeout(() => {
+      showNotification.value = false
+    }, 5000)
+    errorEmergencyRooms.value = err.message // Display error in the relocate modal too if needed
+  }
+}
+
+// Add computed property for Google Maps Embed URL
+const googleMapsEmbedUrl = computed(() => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  const baseUrl = 'https://www.google.com/maps/embed/v1/search'
+  // Use a default query if mapQuery is empty to prevent errors with encodeURIComponent
+  const queryValue = encodeURIComponent(mapQuery.value || 'United States')
+
+  if (apiKey) {
+    return `${baseUrl}?key=${apiKey}&q=${queryValue}`
+  } else {
+    // If no API key, Google Maps Embed API will likely show an error or have limited functionality.
+    // It's better than breaking the app if the key is momentarily missing during setup.
+    console.warn(
+      'Google Maps API Key (VITE_GOOGLE_MAPS_API_KEY) is not set in .env file. Map functionality will be limited or show an error.',
+    )
+    return `${baseUrl}?q=${queryValue}`
+  }
+})
 </script>
 
 <template>
@@ -888,6 +1046,12 @@ const updatePatientStatus = async (patient, newStatus) => {
                     class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                   >
                     Edit
+                  </button>
+                  <button
+                    @click="openRelocateModal"
+                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                  >
+                    Relocate Patient
                   </button>
                   <button
                     @click="closePatientDetail"
@@ -1385,93 +1549,6 @@ const updatePatientStatus = async (patient, newStatus) => {
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1"
-                          >Select Symptoms</label
-                        >
-                        <div
-                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
-                        >
-                          <div class="grid grid-cols-2 gap-2">
-                            <div
-                              v-for="option in symptomOptions"
-                              :key="option"
-                              class="flex items-center"
-                            >
-                              <input
-                                type="checkbox"
-                                :id="'symptom-' + option"
-                                :value="option"
-                                v-model="editedPatient.symptoms.selected"
-                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                              />
-                              <label
-                                :for="'symptom-' + option"
-                                class="ml-2 text-sm text-gray-700"
-                                >{{ option }}</label
-                              >
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"
-                          >Select Symptoms</label
-                        >
-                        <div
-                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
-                        >
-                          <div class="grid grid-cols-2 gap-2">
-                            <div
-                              v-for="option in symptomOptions"
-                              :key="option"
-                              class="flex items-center"
-                            >
-                              <input
-                                type="checkbox"
-                                :id="'symptom-' + option"
-                                :value="option"
-                                v-model="editedPatient.symptoms.selected"
-                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                              />
-                              <label
-                                :for="'symptom-' + option"
-                                class="ml-2 text-sm text-gray-700"
-                                >{{ option }}</label
-                              >
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"
-                          >Select Symptoms</label
-                        >
-                        <div
-                          class="bg-white p-4 rounded border border-gray-300 max-h-60 overflow-y-auto"
-                        >
-                          <div class="grid grid-cols-2 gap-2">
-                            <div
-                              v-for="option in symptomOptions"
-                              :key="option"
-                              class="flex items-center"
-                            >
-                              <input
-                                type="checkbox"
-                                :id="'symptom-' + option"
-                                :value="option"
-                                v-model="editedPatient.symptoms.selected"
-                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                              />
-                              <label
-                                :for="'symptom-' + option"
-                                class="ml-2 text-sm text-gray-700"
-                                >{{ option }}</label
-                              >
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"
                           >Symptoms Description</label
                         >
                         <textarea
@@ -1536,6 +1613,110 @@ const updatePatientStatus = async (patient, newStatus) => {
       <!-- <SettingsModal :show="showSettings" @close="showSettings = false" /> -->
     </div>
   </div>
+
+  <!-- Emergency Rooms Modal -->
+  <Transition name="modal">
+    <div
+      v-if="showEmergencyRoomsModal"
+      class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-[60]"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-900">Relocate Patient: Select Hospital</h2>
+          <button
+            @click="closeRelocateModal"
+            class="px-3 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition"
+          >
+            Cancel
+          </button>
+        </div>
+
+        <div class="flex-grow flex flex-col md:flex-row gap-4 overflow-hidden">
+          <!-- Map Area -->
+          <div class="w-full md:w-2/3 h-64 md:h-auto border rounded-lg overflow-hidden">
+            <iframe
+              width="100%"
+              height="100%"
+              style="border: 0"
+              loading="lazy"
+              allowfullscreen
+              referrerpolicy="no-referrer-when-downgrade"
+              :src="googleMapsEmbedUrl"
+            >
+            </iframe>
+            <p class="text-xs text-gray-500 p-1">
+              If map doesn't load, ensure API key is set (check .env file and restart dev server)
+              and valid, or that the query is specific enough.
+            </p>
+          </div>
+
+          <!-- Hospital List Area -->
+          <div
+            class="w-full md:w-1/3 flex-shrink-0 overflow-y-auto pr-2 space-y-2 md:max-h-[calc(90vh-200px)]"
+          >
+            <div v-if="loadingEmergencyRooms" class="text-center py-4">
+              <p class="text-gray-600">Loading emergency rooms...</p>
+            </div>
+            <div v-else-if="errorEmergencyRooms" class="text-center py-4 text-red-600">
+              <p>{{ errorEmergencyRooms }}</p>
+            </div>
+            <div v-else-if="emergencyRoomsData.length === 0" class="text-center py-4 text-gray-600">
+              <p>No emergency rooms found.</p>
+            </div>
+            <div
+              v-for="(hospital, index) in emergencyRoomsData"
+              :key="hospital.place_id || index"
+              @click="selectHospitalForRelocation(hospital)"
+              :class="[
+                'p-3 rounded-lg border cursor-pointer hover:bg-gray-100 transition-colors',
+                selectedRelocationHospital === hospital
+                  ? 'bg-blue-100 border-blue-400 ring-2 ring-blue-300'
+                  : 'bg-gray-50 border-gray-200',
+              ]"
+            >
+              <h3 class="text-md font-semibold text-gray-800">{{ hospital.name }}</h3>
+              <p v-if="hospital.vicinity" class="text-sm text-gray-600">{{ hospital.vicinity }}</p>
+              <p v-else class="text-sm text-gray-500 italic">Address not available</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end items-center">
+          <div v-if="selectedRelocationHospital" class="text-sm text-gray-700 mr-4">
+            Selected: <span class="font-semibold">{{ selectedRelocationHospital.name }}</span>
+          </div>
+          <button
+            @click="confirmPatientRelocation"
+            :disabled="!selectedRelocationHospital || loadingEmergencyRooms"
+            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center"
+          >
+            <svg
+              v-if="loadingEmergencyRooms"
+              class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Relocate Patient & Remove from List
+          </button>
+        </div>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>

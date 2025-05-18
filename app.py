@@ -517,6 +517,30 @@ def get_emergency_rooms():
     closet_emergency_rooms = find_nearest_emergency_rooms()
     return closet_emergency_rooms
 
+@app.route('/api/patients/<string:patient_id>/relocate', methods=['DELETE'])
+def relocate_patient(patient_id):
+    try:
+        object_id = ObjectId(patient_id)
+        result = patients_collection.delete_one({'_id': object_id})
+
+        if result.deleted_count == 0:
+            return jsonify({
+                "status": "error",
+                "message": "Patient not found or already relocated"
+            }), 404
+
+        return jsonify({
+            "status": "success",
+            "message": "Patient relocated successfully (removed from database)"
+        })
+
+    except Exception as e:
+        print(f"Error relocating patient: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 # Start Flask server
 if __name__ == "__main__":
     print("Starting Flask server on port 3000...")  # Debug log
