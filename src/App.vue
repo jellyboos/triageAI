@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import LandingPage from './components/LandingPage.vue'
 import PatientPage from './components/PatientPage.vue'
 import NursePage from './components/NursePage.vue'
+import HighPriorityPatientPage from './components/HighPriorityPatientPage.vue'
 import AuthModal from './components/AuthModal.vue'
 
 const currentPage = ref('landing')
@@ -39,7 +40,7 @@ onMounted(() => {
 })
 
 const navigateTo = (page) => {
-  if (page === 'nurse' && !isAuthenticated.value) {
+  if ((page === 'nurse' || page === 'high-priority') && !isAuthenticated.value) {
     showAuth.value = true
   } else {
     currentPage.value = page
@@ -58,6 +59,11 @@ const handleAuth = (authenticated) => {
   <div class="app">
     <component v-if="currentPage === 'landing'" :is="LandingPage" @navigate="navigateTo" />
     <component v-else-if="currentPage === 'patient'" :is="PatientPage" @navigate="navigateTo" />
+    <component
+      v-else-if="currentPage === 'high-priority'"
+      :is="HighPriorityPatientPage"
+      @navigate="navigateTo"
+    />
     <component v-else :is="NursePage" @navigate="navigateTo" />
 
     <AuthModal v-if="showAuth" @authenticated="handleAuth" @close="showAuth = false" />
