@@ -92,6 +92,7 @@ Choose `demo-myapp` as the project ID (or anything with a `demo-` prefix).
 
 ```bash
 firebase emulators:start --project demo-myapp
+
 ```
 
 The emulators will be available at:

@@ -261,7 +261,8 @@ def patient_data():
                 "esi_explanation": esi_explanation,
                 # Add multi-select fields
                 "substance_use": substance_use,
-                "family_history": family_history
+                "family_history": family_history,
+                "treatmentPlan": treatment_response  # Add treatment plan
             }
 
             # Store patient record in MongoDB
@@ -364,7 +365,8 @@ def update_patient(patient_id):
             "symptoms": data.get('symptoms'),
             "notes": data.get('notes'),
             "status": data.get('status', 'waiting'),
-            "priority": data.get('priority', 3)
+            "priority": data.get('priority', 3),
+            "treatmentPlan": data.get('treatmentPlan', '')
         }
         
         return jsonify({
