@@ -1,7 +1,7 @@
 # Flask application for patient triage system
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
-from model import generate_triage
+from model import generate_triage, generate_treatment_plan
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from busyness_predictor import BusynessPredictor
@@ -222,6 +222,22 @@ def patient_data():
                     "message": f"Error generating triage: {str(e)}"
                 }), 500
 
+            try:
+                # Generate ESI
+                treatment_response = generate_treatment_plan(
+                    vitals.get('temperature'), 
+                    vitals.get('pulse'), 
+                    vitals.get('respirationRate'), 
+                    bloodPressure, 
+                    symptom_text
+                )
+                print("TREATMENT RESPONSE: ", treatment_response)
+            except Exception as e:
+                print("Error in generate_treatment_plan:", str(e))
+                return jsonify({
+                    "status": "error",
+                    "message": f"Error generating treatment plan: {str(e)}"
+                }), 500
             # Create patient record for database
             patient_record = {
                 "firstName": firstName,

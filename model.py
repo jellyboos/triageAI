@@ -27,3 +27,15 @@ def generate_triage(temperature, pulse, respiration, bloodPressure, symptoms):
     except Exception as e:
         print(f"Error in generate_triage: {str(e)}")
         return "3 - Default triage level due to processing error"
+
+
+def generate_treatment_plan(temperature, pulse, respiration, bloodPressure, symptoms):
+    try:
+        parts = [{
+            "text": f"Generate a summarized tentative treatment plan based on the patient's temperature: {temperature}, pulse: {pulse}, respiration: {respiration}, blood pressure: {bloodPressure}, symptoms: {symptoms}. One short sentence, just the treatment plan, no other text."
+        }]
+        response = client.models.generate_content(model='gemini-2.0-flash', contents=parts)
+        return response.text
+    except Exception as e:
+        print(f"Error in generate treatment plan: {str(e)}")
+        return "No treatment plan available"
