@@ -10,10 +10,25 @@ CORS(app)
 # MongoDB connection set up
 try:
     client = MongoClient("mongodb://localhost:27017/")
+    
+    # Create or get the database
     db = client["patientdb"]
-    patients_collection = db["patient"]
+    
+    # Create or get the collection
+    if "patient" not in db.list_collection_names():
+        patients_collection = db.create_collection("patient")
+        print("Created new patients collection")
+    else:
+        patients_collection = db["patient"]
+    
+    # Verify connection
+    client.admin.command('ping')
+    print("Successfully connected to MongoDB and initialized database")
+    
 except Exception as e:
-    print("MongoDB connection error:", str(e))
+    print("MongoDB connection/initialization error:", str(e))
+    print("Please ensure MongoDB is running on localhost:27017")
+    raise Exception("Failed to initialize MongoDB. Application cannot start without database connection.")
 
 @app.route('/')
 def LandingPage():
