@@ -1,4 +1,4 @@
-<!-- <script setup>
+<script setup>
 import { ref, onMounted } from 'vue'
 
 const props = defineProps({
@@ -132,4 +132,4 @@ onMounted(() => {
 .pac-item-selected {
   background-color: #e5e7eb;
 }
-</style> -->
+</style>
