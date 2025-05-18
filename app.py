@@ -499,6 +499,7 @@ def get_location():
 @app.route('/api/emergency-rooms', methods=['GET'])
 def get_emergency_rooms():
     closet_emergency_rooms = find_nearest_emergency_rooms()
+    return closet_emergency_rooms
 
 # Start Flask server
 if __name__ == "__main__":
