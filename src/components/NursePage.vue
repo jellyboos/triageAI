@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 // import SettingsModal from './SettingsModal.vue'
 import draggable from 'vuedraggable'
 
@@ -159,6 +159,24 @@ const getPriorityColor = (priority) => {
   }
 }
 
+// Return appropriate Tailwind classes for patient card background based on priority
+const getPriorityCardBackground = (priority) => {
+  switch (priority) {
+    case 1:
+      return 'bg-red-50' // Light pastel red
+    case 2:
+      return 'bg-orange-50' // Light pastel orange
+    case 3:
+      return 'bg-yellow-50' // Light pastel yellow
+    case 4:
+      return 'bg-blue-50' // Light pastel blue
+    case 5:
+      return 'bg-green-50' // Light pastel green
+    default:
+      return 'bg-gray-50' // Default pastel gray for any other cases
+  }
+}
+
 // Notification state
 const showNotification = ref(false)
 const notificationMessage = ref('')
@@ -206,11 +224,53 @@ const handleNotificationResponse = (confirmed) => {
   showNotification.value = false
   pendingPriorityChange.value = null
 }
+
+// Add busyness prediction state
+const busynessData = ref({
+  predictedPatients: null,
+  date: null,
+  timezone: null,
+  error: null,
+})
+
+// Add function to fetch busyness prediction
+const fetchBusynessPrediction = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/api/predict/busyness')
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const data = await response.json()
+    console.log('API Response:', data)
+    const today = data.predictions.date
+    console.log('Today:', today)
+
+    busynessData.value = {
+      predictedPatients: data.predictions.predicted_busyness,
+      date: data.predictions.date,
+      timezone: null,
+      error: null,
+    }
+  } catch (error) {
+    console.error('Error fetching busyness prediction:', error)
+    busynessData.value = {
+      predictedPatients: null,
+      date: null,
+      timezone: null,
+      error: error.message || 'Unable to fetch prediction',
+    }
+  }
+}
+
+// Call on component mount
+onMounted(() => {
+  fetchBusynessPrediction()
+})
 </script>
 
 <template>
   <!-- Main container - takes full viewport height -->
-  <div class="min-h-screen min-w-screen relative">
+  <div class="min-h-screen min-w-screen relative bg-gray-50">
     <!-- Notification Box -->
     <Transition name="notification">
       <div
@@ -242,40 +302,49 @@ const handleNotificationResponse = (confirmed) => {
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header section with back button, title, and settings -->
-      <div class="flex items-center mb-8">
-        <button
-          @click="goBack"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-          ← Back to Main
-        </button>
-        <h2 class="text-2xl font-bold text-gray-900 text-center w-full">Patient Management</h2>
-        <!-- <button
-          @click="showSettings = true"
-          class="inline-flex items-center px-3 py-3 rounded-full hover:bg-gray-100 transition-colors"
-          title="Settings"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <div class="bg-white rounded-xl shadow-md mb-8 p-4">
+        <div class="flex items-center justify-between">
+          <button
+            @click="goBack"
+            class="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-        </button> -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 mr-2"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Back to Main
+          </button>
+
+          <h2
+            class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent"
+          >
+            Patient Management
+          </h2>
+
+          <div
+            class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-100 shadow-sm"
+          >
+            <div class="text-sm text-blue-600 font-medium">
+              {{ busynessData.date || 'Loading...' }}
+            </div>
+            <div class="text-lg font-bold text-blue-700">
+              <template v-if="busynessData.error">
+                <span class="text-red-600">{{ busynessData.error }}</span>
+              </template>
+              <template v-else>
+                {{ busynessData.predictedPatients || '--' }} patients expected
+              </template>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Patient cards container -->
       <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
@@ -289,7 +358,20 @@ const handleNotificationResponse = (confirmed) => {
           <template #item="{ element }">
             <div
               @click="openPatientDetail(element)"
-              class="draggable-item bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
+              :class="[
+                'draggable-item',
+                'rounded-2xl',
+                'shadow',
+                'p-4',
+                'cursor-move',
+                'hover:shadow-md',
+                'transition-shadow',
+                'flex-1',
+                'min-w-[40em]',
+                'min-h-[10em]',
+                'mb-4',
+                getPriorityCardBackground(element.priority),
+              ]"
             >
               <!-- Card header with name and status -->
               <div class="flex justify-between items-start">
@@ -336,7 +418,7 @@ const handleNotificationResponse = (confirmed) => {
         >
           <!-- Modal content -->
           <Transition name="modal-content">
-            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8">
+            <div v-if="selectedPatient" class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8">
               <!-- Modal header with close button -->
               <div class="flex justify-between items-start mb-8">
                 <div class="flex items-center gap-6">
@@ -481,108 +563,124 @@ const handleNotificationResponse = (confirmed) => {
 </template>
 
 <style scoped>
-/* Custom styles can be added here if needed */
-
-textarea {
-  resize: vertical;
-  transition: all 0.2s ease;
+/* Base styles */
+.min-h-screen {
+  background: linear-gradient(135deg, #f6f8fc 0%, #f1f4f9 100%);
 }
 
-textarea:focus {
-  outline: none;
-}
-
-/* Card animations */
+/* Card styles */
 .draggable-item {
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  /* backdrop-filter: blur(8px); removed for solid pastel backgrounds */
+  /* background: rgba(255, 255, 255, 0.9); removed to use Tailwind bg classes */
 }
 
 .draggable-item:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(226, 232, 240, 1);
 }
 
-.draggable-item.sortable-ghost {
-  opacity: 0.5;
-  background: #f3f4f6;
-}
-
-.draggable-item.sortable-chosen {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-/* Modal animations */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-content-enter-active,
-.modal-content-leave-active {
-  transition: all 0.3s ease;
-}
-
-.modal-content-enter-from,
-.modal-content-leave-to {
-  transform: scale(0.95);
-  opacity: 0;
-}
-
-/* Status badge animations */
+/* Status badges */
 .status-badge {
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .status-badge:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Priority badge animations */
+/* Priority badges */
 .priority-badge {
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .priority-badge:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Notification animations */
+/* Modal styles */
+.modal-content-enter-active,
+.modal-content-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-content-enter-from,
+.modal-content-leave-to {
+  transform: scale(0.95) translateY(-10px);
+  opacity: 0;
+}
+
+/* Form elements */
+textarea {
+  resize: vertical;
+  transition: all 0.2s ease;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Buttons */
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* Busyness prediction box */
+.bg-blue-50 {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.bg-blue-50:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Notification styles */
 .notification-enter-active,
 .notification-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .notification-enter-from,
 .notification-leave-to {
-  transform: translateX(100%);
+  transform: translateX(100%) translateY(-10px);
   opacity: 0;
 }
 
-/* Google Places Autocomplete custom styles */
-.pac-container {
-  border-radius: 0.375rem;
-  margin-top: 4px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+/* Header styles */
+h2.text-2xl {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.pac-item {
-  padding: 8px 12px;
-  font-family: inherit;
+/* Drag ghost styles */
+.draggable-item.sortable-ghost {
+  opacity: 0.5;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
 }
 
-.pac-item:hover {
-  background-color: #f3f4f6;
-}
-
-.pac-item-selected {
-  background-color: #e5e7eb;
+.draggable-item.sortable-chosen {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
 }
 </style>
