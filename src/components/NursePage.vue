@@ -17,6 +17,29 @@ const showSettings = ref(false)
 // Track drag state
 const drag = ref(false)
 
+// Track edit state
+const isEditing = ref(false)
+const editedSymptoms = ref('')
+const editedNotes = ref('')
+const editedStatus = ref('')
+const editedPriority = ref(1)
+
+// Status options
+const statusOptions = [
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+]
+
+// Priority options
+const priorityOptions = [
+  { value: 1, label: 'Priority 1 - Critical' },
+  { value: 2, label: 'Priority 2 - High' },
+  { value: 3, label: 'Priority 3 - Medium' },
+  { value: 4, label: 'Priority 4 - Low' },
+  { value: 5, label: 'Priority 5 - Routine' },
+]
+
 // Mock patient data - in real app, this would come from an API
 const patients = ref([
   {
@@ -79,6 +102,31 @@ const closePatientDetail = () => {
   selectedPatient.value = null
 }
 
+// Start editing patient details
+const startEditing = (patient) => {
+  isEditing.value = true
+  editedSymptoms.value = patient.symptoms
+  editedNotes.value = patient.notes
+  editedStatus.value = patient.status
+  editedPriority.value = patient.priority
+}
+
+// Save edited patient details
+const saveEdits = () => {
+  if (selectedPatient.value) {
+    selectedPatient.value.symptoms = editedSymptoms.value
+    selectedPatient.value.notes = editedNotes.value
+    selectedPatient.value.status = editedStatus.value
+    selectedPatient.value.priority = editedPriority.value
+    isEditing.value = false
+  }
+}
+
+// Cancel editing
+const cancelEditing = () => {
+  isEditing.value = false
+}
+
 // Return appropriate Tailwind classes based on patient status
 const getStatusColor = (status) => {
   switch (status) {
@@ -110,11 +158,85 @@ const getPriorityColor = (priority) => {
       return 'bg-gray-100 text-gray-800'
   }
 }
+
+// Notification state
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const pendingPriorityChange = ref(null)
+
+// Show notification
+const showPriorityChangeNotification = (patient, oldPriority, newPriority) => {
+  notificationMessage.value = `Change ${patient.name}'s priority from ${oldPriority} to ${newPriority}?`
+  showNotification.value = true
+  pendingPriorityChange.value = { patient, newPriority }
+}
+
+// Handle drag end and update priority
+const handleDragEnd = (evt) => {
+  drag.value = false
+  if (evt.oldIndex !== evt.newIndex) {
+    const movedPatient = patients.value[evt.newIndex]
+    const oldPriority = movedPatient.priority
+    const newPriority = evt.newIndex + 1 // Priority is 1-based index
+
+    if (oldPriority !== newPriority) {
+      showPriorityChangeNotification(movedPatient, oldPriority, newPriority)
+    }
+  }
+}
+
+// Handle notification response
+const handleNotificationResponse = (confirmed) => {
+  if (confirmed && pendingPriorityChange.value) {
+    const { patient, newPriority } = pendingPriorityChange.value
+    patient.priority = newPriority
+    // Resort the list
+    patients.value.sort((a, b) => a.priority - b.priority)
+  } else {
+    // Revert the drag
+    const index = patients.value.findIndex((p) => p.id === pendingPriorityChange.value.patient.id)
+    if (index !== -1) {
+      const temp = patients.value[index]
+      patients.value[index] = patients.value[pendingPriorityChange.value.newPriority - 1]
+      patients.value[pendingPriorityChange.value.newPriority - 1] = temp
+      // Resort the list
+      patients.value.sort((a, b) => a.priority - b.priority)
+    }
+  }
+  showNotification.value = false
+  pendingPriorityChange.value = null
+}
 </script>
 
 <template>
   <!-- Main container - takes full viewport height -->
-  <div class="min-h-screen min-w-screen">
+  <div class="min-h-screen min-w-screen relative">
+    <!-- Notification Box -->
+    <div
+      v-if="showNotification"
+      class="fixed right-4 top-4 bg-white rounded-lg shadow-lg p-4 w-80 border-l-4 border-blue-500 z-50"
+    >
+      <div class="flex items-start">
+        <div class="flex-1">
+          <p class="text-gray-800 font-medium">{{ notificationMessage }}</p>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button
+            @click="handleNotificationResponse(true)"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Confirm
+          </button>
+          <button
+            @click="handleNotificationResponse(false)"
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header section with back button, title, and settings -->
@@ -156,49 +278,49 @@ const getPriorityColor = (priority) => {
       <!-- Patient cards container -->
       <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
         <draggable
-          v-model="patients"
+          :list="patients"
           item-key="id"
           class="w-full"
-          @start="drag=true"
-          @end="drag=false"
+          @start="drag = true"
+          @end="handleDragEnd"
         >
-          <template #item="{ element: patient }">
+          <template #item="{ element }">
             <div
-              @click="openPatientDetail(patient)"
+              @click="openPatientDetail(element)"
               class="bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
             >
               <!-- Card header with name and status -->
               <div class="flex justify-between items-start">
                 <div>
-                  <h3 class="text-lg font-semibold text-gray-900">{{ patient.name }}</h3>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ element.name }}</h3>
                   <p class="text-sm text-gray-500">
-                    Check-in: {{ new Date(patient.checkInTime).toLocaleTimeString() }}
+                    Check-in: {{ new Date(element.checkInTime).toLocaleTimeString() }}
                   </p>
                 </div>
 
                 <!-- Status badge -->
                 <span
                   :class="[
-                    getStatusColor(patient.status),
+                    getStatusColor(element.status),
                     'px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
-                  {{ patient.status }}
+                  {{ element.status }}
                 </span>
               </div>
               <!-- Priority badge -->
               <div class="mt-2">
                 <span
                   :class="[
-                    getPriorityColor(patient.priority),
+                    getPriorityColor(element.priority),
                     'px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
-                  Priority {{ patient.priority }}
+                  Priority {{ element.priority }}
                 </span>
               </div>
               <!-- Symptoms preview -->
-              <p class="mt-2 text-sm text-gray-600">{{ patient.symptoms }}</p>
+              <p class="mt-2 text-sm text-gray-600">{{ element.symptoms }}</p>
             </div>
           </template>
         </draggable>
@@ -222,6 +344,7 @@ const getPriorityColor = (priority) => {
               </div>
               <div class="flex gap-3">
                 <span
+                  v-if="!isEditing"
                   :class="[
                     getStatusColor(selectedPatient.status),
                     'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
@@ -229,7 +352,17 @@ const getPriorityColor = (priority) => {
                 >
                   {{ selectedPatient.status }}
                 </span>
+                <select
+                  v-else
+                  v-model="editedStatus"
+                  class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
                 <span
+                  v-if="!isEditing"
                   :class="[
                     getPriorityColor(selectedPatient.priority),
                     'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
@@ -237,19 +370,41 @@ const getPriorityColor = (priority) => {
                 >
                   Priority {{ selectedPatient.priority }}
                 </span>
+                <select
+                  v-else
+                  v-model="editedPriority"
+                  class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option
+                    v-for="option in priorityOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
             </div>
-            <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
-              <span class="sr-only">Close</span>
-              <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+            <div class="flex gap-2">
+              <button
+                v-if="!isEditing"
+                @click="startEditing(selectedPatient)"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Edit
+              </button>
+              <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
+                <span class="sr-only">Close</span>
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Modal body with patient details -->
@@ -259,17 +414,45 @@ const getPriorityColor = (priority) => {
               <div class="flex justify-between items-center mb-2">
                 <h4 class="text-xl font-medium text-gray-700">Symptoms</h4>
               </div>
-              <p class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+              <div v-if="!isEditing" class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
                 {{ selectedPatient.symptoms }}
-              </p>
+              </div>
+              <textarea
+                v-else
+                v-model="editedSymptoms"
+                class="w-full text-lg text-gray-900 bg-gray-50 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                rows="3"
+              ></textarea>
             </div>
 
             <!-- Notes -->
             <div>
               <h4 class="text-xl font-medium text-gray-700 mb-2">Notes</h4>
-              <p class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+              <div v-if="!isEditing" class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
                 {{ selectedPatient.notes }}
-              </p>
+              </div>
+              <textarea
+                v-else
+                v-model="editedNotes"
+                class="w-full text-lg text-gray-900 bg-gray-50 p-4 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                rows="5"
+              ></textarea>
+            </div>
+
+            <!-- Edit action buttons -->
+            <div v-if="isEditing" class="flex justify-end gap-3 mt-4">
+              <button
+                @click="cancelEditing"
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                @click="saveEdits"
+                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>

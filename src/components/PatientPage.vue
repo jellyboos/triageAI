@@ -288,9 +288,10 @@ const removeImage = (index) => {
 .page {
   padding: 2rem;
   text-align: center;
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   animation: fadeIn 0.5s ease-out;
+  font-size: 1.1rem;
 }
 
 .back-button {
@@ -332,7 +333,7 @@ const removeImage = (index) => {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   transition: transform 0.3s ease;
 }
 
@@ -344,6 +345,7 @@ label {
   font-weight: 600;
   color: #333;
   transition: color 0.3s ease;
+  font-size: 1.2rem;
 }
 
 .form-group:focus-within label {
@@ -354,7 +356,7 @@ input {
   padding: 0.75rem;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 1.1rem;
   transition: all 0.3s ease;
   background: #f8f8f8;
 }
@@ -629,5 +631,12 @@ textarea:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-weight: 700;
 }
 </style>
