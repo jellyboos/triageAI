@@ -97,8 +97,7 @@ const commonSymptoms = [
 const loading = ref(false)
 const error = ref(null)
 const showSuccessModal = ref(false)
-const isDragging = ref(false)
-const imageError = ref(null)
+
 
 const submitForm = async () => {
   loading.value = true
@@ -118,7 +117,7 @@ const submitForm = async () => {
       throw new Error(`Server responded with status: ${response.status}`)
     }
 
-    const data = await response.json()
+    await response.json()
     showSuccessModal.value = true
 
     // Reset form with empty values but keep the structure
@@ -179,52 +178,6 @@ const goBack = () => {
   emit('navigate', 'landing')
 }
 
-const handleDragOver = (e) => {
-  e.preventDefault()
-  isDragging.value = true
-}
-
-const handleDragLeave = () => {
-  isDragging.value = false
-}
-
-const handleDrop = (e) => {
-  e.preventDefault()
-  isDragging.value = false
-  const files = Array.from(e.dataTransfer.files)
-  handleFiles(files)
-}
-
-const handleFileSelect = (e) => {
-  const files = Array.from(e.target.files)
-  handleFiles(files)
-}
-
-const handleFiles = (files) => {
-  imageError.value = null
-  const validFiles = files.filter((file) => {
-    const isValid = file.type.startsWith('image/')
-    if (!isValid) {
-      imageError.value = 'Please upload only image files'
-    }
-    return isValid
-  })
-
-  validFiles.forEach((file) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      patient.value.images.push({
-        name: file.name,
-        data: e.target.result,
-      })
-    }
-    reader.readAsDataURL(file)
-  })
-}
-
-const removeImage = (index) => {
-  patient.value.images.splice(index, 1)
-}
 </script>
 
 <template>
