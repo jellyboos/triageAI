@@ -10,8 +10,8 @@ google-genai==1.15.0
 dotenv == 0.9.9
 scikit-learn
 pandas==2.2.1
-googlemaps-4.10.0
-geocoder-1.38.1
-future-1.0.0
-decorator-5.2.1
-ratelim-0.1.6
+googlemaps
+geocoder
+future
+decorator
+ratelim
