@@ -158,11 +158,85 @@ const getPriorityColor = (priority) => {
       return 'bg-gray-100 text-gray-800'
   }
 }
+
+// Notification state
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const pendingPriorityChange = ref(null)
+
+// Show notification
+const showPriorityChangeNotification = (patient, oldPriority, newPriority) => {
+  notificationMessage.value = `Change ${patient.name}'s priority from ${oldPriority} to ${newPriority}?`
+  showNotification.value = true
+  pendingPriorityChange.value = { patient, newPriority }
+}
+
+// Handle drag end and update priority
+const handleDragEnd = (evt) => {
+  drag.value = false
+  if (evt.oldIndex !== evt.newIndex) {
+    const movedPatient = patients.value[evt.newIndex]
+    const oldPriority = movedPatient.priority
+    const newPriority = evt.newIndex + 1 // Priority is 1-based index
+
+    if (oldPriority !== newPriority) {
+      showPriorityChangeNotification(movedPatient, oldPriority, newPriority)
+    }
+  }
+}
+
+// Handle notification response
+const handleNotificationResponse = (confirmed) => {
+  if (confirmed && pendingPriorityChange.value) {
+    const { patient, newPriority } = pendingPriorityChange.value
+    patient.priority = newPriority
+    // Resort the list
+    patients.value.sort((a, b) => a.priority - b.priority)
+  } else {
+    // Revert the drag
+    const index = patients.value.findIndex((p) => p.id === pendingPriorityChange.value.patient.id)
+    if (index !== -1) {
+      const temp = patients.value[index]
+      patients.value[index] = patients.value[pendingPriorityChange.value.newPriority - 1]
+      patients.value[pendingPriorityChange.value.newPriority - 1] = temp
+      // Resort the list
+      patients.value.sort((a, b) => a.priority - b.priority)
+    }
+  }
+  showNotification.value = false
+  pendingPriorityChange.value = null
+}
 </script>
 
 <template>
   <!-- Main container - takes full viewport height -->
-  <div class="min-h-screen min-w-screen">
+  <div class="min-h-screen min-w-screen relative">
+    <!-- Notification Box -->
+    <div
+      v-if="showNotification"
+      class="fixed right-4 top-4 bg-white rounded-lg shadow-lg p-4 w-80 border-l-4 border-blue-500 z-50"
+    >
+      <div class="flex items-start">
+        <div class="flex-1">
+          <p class="text-gray-800 font-medium">{{ notificationMessage }}</p>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button
+            @click="handleNotificationResponse(true)"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Confirm
+          </button>
+          <button
+            @click="handleNotificationResponse(false)"
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header section with back button, title, and settings -->
@@ -204,49 +278,49 @@ const getPriorityColor = (priority) => {
       <!-- Patient cards container -->
       <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
         <draggable
-          v-model="patients"
+          :list="patients"
           item-key="id"
           class="w-full"
           @start="drag = true"
-          @end="drag = false"
+          @end="handleDragEnd"
         >
-          <template #item="{ element: patient }">
+          <template #item="{ element }">
             <div
-              @click="openPatientDetail(patient)"
+              @click="openPatientDetail(element)"
               class="bg-white rounded-lg shadow p-4 cursor-move hover:shadow-md transition-shadow flex-1 min-w-[40em] min-h-[10em] mb-4"
             >
               <!-- Card header with name and status -->
               <div class="flex justify-between items-start">
                 <div>
-                  <h3 class="text-lg font-semibold text-gray-900">{{ patient.name }}</h3>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ element.name }}</h3>
                   <p class="text-sm text-gray-500">
-                    Check-in: {{ new Date(patient.checkInTime).toLocaleTimeString() }}
+                    Check-in: {{ new Date(element.checkInTime).toLocaleTimeString() }}
                   </p>
                 </div>
 
                 <!-- Status badge -->
                 <span
                   :class="[
-                    getStatusColor(patient.status),
+                    getStatusColor(element.status),
                     'px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
-                  {{ patient.status }}
+                  {{ element.status }}
                 </span>
               </div>
               <!-- Priority badge -->
               <div class="mt-2">
                 <span
                   :class="[
-                    getPriorityColor(patient.priority),
+                    getPriorityColor(element.priority),
                     'px-2 py-1 rounded-full text-xs font-medium',
                   ]"
                 >
-                  Priority {{ patient.priority }}
+                  Priority {{ element.priority }}
                 </span>
               </div>
               <!-- Symptoms preview -->
-              <p class="mt-2 text-sm text-gray-600">{{ patient.symptoms }}</p>
+              <p class="mt-2 text-sm text-gray-600">{{ element.symptoms }}</p>
             </div>
           </template>
         </draggable>
