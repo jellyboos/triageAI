@@ -37,7 +37,6 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.3s ease-out;
 }
 
 .modal-content {
@@ -45,7 +44,6 @@ onMounted(() => {
   padding: 2rem;
   border-radius: 1rem;
   text-align: center;
-  animation: slideIn 0.3s ease-out;
 }
 
 .checkmark-circle {
@@ -62,64 +60,17 @@ onMounted(() => {
   stroke-width: 2;
   stroke: #4caf50;
   stroke-miterlimit: 10;
-  animation: scale 0.3s ease-in-out 0.9s both;
 }
 
 .checkmark-circle-bg {
   fill: none;
   stroke: #4caf50;
   stroke-width: 2;
-  animation: fill 0.4s ease-in-out 0.4s forwards;
 }
 
 .checkmark-check {
   transform-origin: 50% 50%;
-  stroke-dasharray: 48;
-  stroke-dashoffset: 48;
-  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
   stroke: white;
   stroke-width: 3;
-}
-
-@keyframes stroke {
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes scale {
-  0%,
-  100% {
-    transform: none;
-  }
-  50% {
-    transform: scale3d(1.1, 1.1, 1);
-  }
-}
-
-@keyframes fill {
-  100% {
-    box-shadow: inset 0px 0px 0px 30px #4caf50;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
 </style>
