@@ -403,6 +403,7 @@ def get_busyness_prediction(date=None):
         print(f"Error in busyness prediction: {str(e)}")
         return None
 
+
 @app.route('/api/predict/busyness', methods=['GET'])
 def predict_busyness():
     try:
@@ -448,6 +449,7 @@ def predict_busyness():
             "status": "error",
             "message": str(e)
         }), 500
+
 
 @app.route('/api/location', methods=['GET'])
 def get_location():

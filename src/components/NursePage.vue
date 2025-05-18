@@ -483,12 +483,12 @@ const fetchBusynessPrediction = async () => {
     }
     const data = await response.json()
     console.log('API Response:', data)
-    const today = data.predictions.date
-    console.log('Today:', today)
 
+    // Handle the predictions array structure
+    const prediction = data.predictions[0] // Get first prediction from array
     busynessData.value = {
-      predictedPatients: data.predictions.predicted_busyness,
-      date: data.predictions.date,
+      predictedPatients: prediction.predicted_busyness,
+      date: prediction.date,
       timezone: null,
       error: null,
     }
