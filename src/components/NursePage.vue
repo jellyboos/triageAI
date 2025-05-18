@@ -21,6 +21,24 @@ const drag = ref(false)
 const isEditing = ref(false)
 const editedSymptoms = ref('')
 const editedNotes = ref('')
+const editedStatus = ref('')
+const editedPriority = ref(1)
+
+// Status options
+const statusOptions = [
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+]
+
+// Priority options
+const priorityOptions = [
+  { value: 1, label: 'Priority 1 - Critical' },
+  { value: 2, label: 'Priority 2 - High' },
+  { value: 3, label: 'Priority 3 - Medium' },
+  { value: 4, label: 'Priority 4 - Low' },
+  { value: 5, label: 'Priority 5 - Routine' },
+]
 
 // Mock patient data - in real app, this would come from an API
 const patients = ref([
@@ -89,6 +107,8 @@ const startEditing = (patient) => {
   isEditing.value = true
   editedSymptoms.value = patient.symptoms
   editedNotes.value = patient.notes
+  editedStatus.value = patient.status
+  editedPriority.value = patient.priority
 }
 
 // Save edited patient details
@@ -96,6 +116,8 @@ const saveEdits = () => {
   if (selectedPatient.value) {
     selectedPatient.value.symptoms = editedSymptoms.value
     selectedPatient.value.notes = editedNotes.value
+    selectedPatient.value.status = editedStatus.value
+    selectedPatient.value.priority = editedPriority.value
     isEditing.value = false
   }
 }
@@ -248,6 +270,7 @@ const getPriorityColor = (priority) => {
               </div>
               <div class="flex gap-3">
                 <span
+                  v-if="!isEditing"
                   :class="[
                     getStatusColor(selectedPatient.status),
                     'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
@@ -255,7 +278,17 @@ const getPriorityColor = (priority) => {
                 >
                   {{ selectedPatient.status }}
                 </span>
+                <select
+                  v-else
+                  v-model="editedStatus"
+                  class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
                 <span
+                  v-if="!isEditing"
                   :class="[
                     getPriorityColor(selectedPatient.priority),
                     'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
@@ -263,6 +296,19 @@ const getPriorityColor = (priority) => {
                 >
                   Priority {{ selectedPatient.priority }}
                 </span>
+                <select
+                  v-else
+                  v-model="editedPriority"
+                  class="px-4 py-2 rounded-full text-base font-medium border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option
+                    v-for="option in priorityOptions"
+                    :key="option.value"
+                    :value="option.value"
+                  >
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
             </div>
             <div class="flex gap-2">
