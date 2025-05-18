@@ -1,16 +1,32 @@
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 from model import generate_triage
-from pymongo import MongoClient
 from datetime import datetime
+import os
+from bson import ObjectId
 
 app = Flask(__name__)
 CORS(app)
 
-# MongoDB connection set up
-client = MongoClient("mongodb://localhost:27017/")
-db = client["patientdb"]
-patients_collection = db["patients"]
+# In-memory storage as fallback
+in_memory_patients = []
+
+# Try to set up MongoDB, but don't fail if it's not available
+try:
+    from pymongo import MongoClient
+    client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
+    # Test the connection
+    client.server_info()
+    db = client["patientdb"]
+    # Ensure collection exists
+    if "patients" not in db.list_collection_names():
+        db.create_collection("patients")
+    patients_collection = db["patients"]
+    USE_MONGODB = True
+    print("Successfully connected to MongoDB")
+except Exception as e:
+    print(f"MongoDB not available, using in-memory storage: {str(e)}")
+    USE_MONGODB = False
 
 @app.route('/')
 def LandingPage():
@@ -72,52 +88,57 @@ def patient_data():
             'updatedAt': datetime.now()
         }
         
-        # Insert into MongoDB
         try:
-            result = patients_collection.insert_one(patient_doc)
-            print(f"Patient document inserted with id: {result.inserted_id}")
-            
-            # Generate triage data if needed
-            blood_pressure = f"{patient_doc['vitals']['bloodPressure']['systolic']}/{patient_doc['vitals']['bloodPressure']['diastolic']}"
-            symptoms = patient_doc['symptoms']
-            model_response = generate_triage(blood_pressure, symptoms, [])
-            esi_data = model_response.split(" - ")
-            
-            # Update document with triage data
-            patients_collection.update_one(
-                {'_id': result.inserted_id},
-                {
-                    '$set': {
-                        'triage': {
-                            'esiNumber': esi_data[0],
-                            'explanation': esi_data[1]
-                        }
-                    }
+            # Try to generate triage data
+            try:
+                blood_pressure = f"{patient_doc['vitals']['bloodPressure']['systolic']}/{patient_doc['vitals']['bloodPressure']['diastolic']}"
+                symptoms = patient_doc['symptoms']
+                model_response = generate_triage(blood_pressure, symptoms, [])
+                esi_data = model_response.split(" - ")
+                patient_doc['triage'] = {
+                    'esiNumber': esi_data[0],
+                    'explanation': esi_data[1]
                 }
-            )
+            except Exception as e:
+                print(f"Error generating triage: {str(e)}")
+                patient_doc['triage'] = {
+                    'esiNumber': '3',
+                    'explanation': 'Default triage level - triage generation failed'
+                }
+            
+            # Store the patient data
+            if USE_MONGODB:
+                result = patients_collection.insert_one(patient_doc)
+                patient_id = str(result.inserted_id)
+            else:
+                patient_id = str(len(in_memory_patients))
+                in_memory_patients.append(patient_doc)
             
             return jsonify({
                 "status": "success",
                 "message": "Patient data received and stored!",
-                "id": str(result.inserted_id)
+                "id": patient_id
             }), 201
             
         except Exception as e:
             print(f"Error storing patient data: {str(e)}")
             return jsonify({
                 "status": "error",
-                "message": "Failed to store patient data"
+                "message": f"Failed to store patient data: {str(e)}"
             }), 500
             
     # GET method
     elif request.method == 'GET':
         try:
-            patients = list(patients_collection.find({}, {'_id': 0}))
+            if USE_MONGODB:
+                patients = list(patients_collection.find({}, {'_id': 0}))
+            else:
+                patients = in_memory_patients
             return jsonify(patients)
         except Exception as e:
             return jsonify({
                 "status": "error",
-                "message": "Failed to retrieve patients"
+                "message": f"Failed to retrieve patients: {str(e)}"
             }), 500
 
 @app.route('/api/message', methods=['GET', 'POST'])
@@ -134,20 +155,56 @@ def update_patient(patient_id):
         data = request.get_json()
         print(f"Received update for patient {patient_id}:", data)  # Debug log
         
-        # Here you would typically update the patient in your database
-        # For now, we'll just return the updated data
-        updated_patient = {
-            "id": patient_id,
-            "symptoms": data.get('symptoms'),
-            "notes": data.get('notes'),
-            "status": data.get('status', 'waiting'),
-            "priority": data.get('priority', 3)
-        }
+        if USE_MONGODB:
+            # Update in MongoDB
+            try:
+                result = patients_collection.update_one(
+                    {'_id': ObjectId(patient_id)},
+                    {'$set': {
+                        'symptoms': data.get('symptoms'),
+                        'notes': data.get('notes'),
+                        'status': data.get('status', 'waiting'),
+                        'priority': data.get('priority', 3),
+                        'updatedAt': datetime.now()
+                    }}
+                )
+                if result.modified_count == 0:
+                    return jsonify({
+                        "status": "error",
+                        "message": "Patient not found"
+                    }), 404
+            except Exception as e:
+                print(f"Error updating patient in MongoDB: {str(e)}")
+                return jsonify({
+                    "status": "error",
+                    "message": f"Database error: {str(e)}"
+                }), 500
+        else:
+            # Update in memory
+            if patient_id >= len(in_memory_patients):
+                return jsonify({
+                    "status": "error",
+                    "message": "Patient not found"
+                }), 404
+            patient = in_memory_patients[patient_id]
+            patient.update({
+                'symptoms': data.get('symptoms'),
+                'notes': data.get('notes'),
+                'status': data.get('status', 'waiting'),
+                'priority': data.get('priority', 3),
+                'updatedAt': datetime.now()
+            })
         
         return jsonify({
             "status": "success",
             "message": "Patient updated successfully",
-            "patient": updated_patient
+            "patient": {
+                "id": patient_id,
+                "symptoms": data.get('symptoms'),
+                "notes": data.get('notes'),
+                "status": data.get('status', 'waiting'),
+                "priority": data.get('priority', 3)
+            }
         })
     except Exception as e:
         print(f"Error updating patient: {str(e)}")  # Debug log
