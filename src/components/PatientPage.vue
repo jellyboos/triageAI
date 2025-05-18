@@ -1,22 +1,22 @@
 <script setup>
 import { ref } from 'vue'
+import SuccessModal from './SuccessModal.vue'
 
 const emit = defineEmits(['navigate'])
 
 const patient = ref({
   firstName: '',
   lastName: '',
-  age: ''
+  age: '',
 })
 
 const loading = ref(false)
 const error = ref(null)
-const success = ref(false)
+const showSuccessModal = ref(false)
 
 const submitForm = async () => {
   loading.value = true
   error.value = null
-  success.value = false
 
   try {
     console.log('Sending patient data:', patient.value)
@@ -25,7 +25,7 @@ const submitForm = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(patient.value)
+      body: JSON.stringify(patient.value),
     })
 
     console.log('Response status:', response.status)
@@ -35,13 +35,13 @@ const submitForm = async () => {
 
     const data = await response.json()
     console.log('Response data:', data)
-    success.value = true
+    showSuccessModal.value = true
 
     // Reset form
     patient.value = {
       firstName: '',
       lastName: '',
-      age: ''
+      age: '',
     }
   } catch (err) {
     error.value = err.message || 'Failed to submit patient data'
@@ -49,6 +49,10 @@ const submitForm = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const closeSuccessModal = () => {
+  showSuccessModal.value = false
 }
 
 const goBack = () => {
@@ -70,7 +74,7 @@ const goBack = () => {
           type="text"
           required
           placeholder="Enter first name"
-        >
+        />
       </div>
 
       <div class="form-group">
@@ -81,7 +85,7 @@ const goBack = () => {
           type="text"
           required
           placeholder="Enter last name"
-        >
+        />
       </div>
 
       <div class="form-group">
@@ -94,16 +98,17 @@ const goBack = () => {
           min="0"
           max="120"
           placeholder="Enter age"
-        >
+        />
       </div>
 
       <div v-if="error" class="error-message">{{ error }}</div>
-      <div v-if="success" class="success-message">Patient data submitted successfully!</div>
 
       <button type="submit" class="submit-button" :disabled="loading">
         {{ loading ? 'Submitting...' : 'Submit' }}
       </button>
     </form>
+
+    <SuccessModal v-if="showSuccessModal" @close="closeSuccessModal" />
   </div>
 </template>
 
@@ -151,7 +156,7 @@ input {
 }
 
 .submit-button {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   padding: 0.75rem;
   border: none;
@@ -175,12 +180,4 @@ input {
   margin-top: 1rem;
   font-size: 0.9rem;
 }
-
-.success-message {
-  color: #4CAF50;
-  margin-top: 1rem;
-  font-size: 0.9rem;
-}
 </style>
-
-

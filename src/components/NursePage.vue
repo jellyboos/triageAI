@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import SettingsModal from './SettingsModal.vue'
 import draggable from 'vuedraggable'
 
 // Emit events to parent component for navigation
@@ -9,6 +10,9 @@ const emit = defineEmits(['navigate'])
 const goBack = () => {
   emit('navigate', 'landing')
 }
+
+// Settings modal state
+const showSettings = ref(false)
 
 // Track drag state
 const drag = ref(false)
@@ -113,7 +117,7 @@ const getPriorityColor = (priority) => {
   <div class="min-h-screen min-w-screen">
     <!-- Content wrapper with max width and padding -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Header section with back button and title -->
+      <!-- Header section with back button, title, and settings -->
       <div class="flex justify-between items-center mb-8">
         <button
           @click="goBack"
@@ -122,8 +126,34 @@ const getPriorityColor = (priority) => {
           ← Back to Main
         </button>
         <h2 class="text-2xl font-bold text-gray-900">Patient Management</h2>
+        <button
+          @click="showSettings = true"
+          class="inline-flex items-center px-3 py-3 rounded-full hover:bg-gray-100 transition-colors"
+          title="Settings"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6 text-gray-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
       </div>
-      <!-- Patient cards container - uses flexbox with wrapping -->
+      <!-- Patient cards container -->
       <div class="flex flex-wrap gap-4 flex-col justify-center items-center">
         <draggable
           v-model="patients"
@@ -174,19 +204,44 @@ const getPriorityColor = (priority) => {
         </draggable>
       </div>
 
-      <!-- Patient Detail Modal - appears when a patient is selected -->
+      <!-- Patient Detail Modal -->
       <div
         v-if="selectedPatient"
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4"
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50"
       >
         <!-- Modal content -->
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-8">
           <!-- Modal header with close button -->
-          <div class="flex justify-between items-start">
-            <h3 class="text-xl font-bold text-gray-900">{{ selectedPatient.name }}</h3>
+          <div class="flex justify-between items-start mb-8">
+            <div class="flex items-center gap-6">
+              <div>
+                <h3 class="text-3xl font-bold text-gray-900">{{ selectedPatient.name }}</h3>
+                <p class="text-lg text-gray-500 mt-1">
+                  Check-in: {{ new Date(selectedPatient.checkInTime).toLocaleString() }}
+                </p>
+              </div>
+              <div class="flex gap-3">
+                <span
+                  :class="[
+                    getStatusColor(selectedPatient.status),
+                    'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
+                  ]"
+                >
+                  {{ selectedPatient.status }}
+                </span>
+                <span
+                  :class="[
+                    getPriorityColor(selectedPatient.priority),
+                    'px-4 py-2 rounded-full text-base font-medium whitespace-nowrap',
+                  ]"
+                >
+                  Priority {{ selectedPatient.priority }}
+                </span>
+              </div>
+            </div>
             <button @click="closePatientDetail" class="text-gray-400 hover:text-gray-500">
               <span class="sr-only">Close</span>
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -198,59 +253,73 @@ const getPriorityColor = (priority) => {
           </div>
 
           <!-- Modal body with patient details -->
-          <div class="mt-4 space-y-4">
-            <!-- Check-in time -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-500">Check-in Time</h4>
-              <p class="mt-1 text-sm text-gray-900">
-                {{ new Date(selectedPatient.checkInTime).toLocaleString() }}
-              </p>
-            </div>
-
-            <!-- Status -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-500">Status</h4>
-              <span
-                :class="[
-                  getStatusColor(selectedPatient.status),
-                  'mt-1 px-2 py-1 rounded-full text-xs font-medium',
-                ]"
-              >
-                {{ selectedPatient.status }}
-              </span>
-            </div>
-
-            <!-- Priority -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-500">Priority</h4>
-              <span
-                :class="[
-                  getPriorityColor(selectedPatient.priority),
-                  'mt-1 px-2 py-1 rounded-full text-xs font-medium',
-                ]"
-              >
-                Priority {{ selectedPatient.priority }}
-              </span>
-            </div>
-
+          <div class="grid grid-cols-1 gap-8">
             <!-- Symptoms -->
             <div>
-              <h4 class="text-sm font-medium text-gray-500">Symptoms</h4>
-              <p class="mt-1 text-sm text-gray-900">{{ selectedPatient.symptoms }}</p>
+              <div class="flex justify-between items-center mb-2">
+                <h4 class="text-xl font-medium text-gray-700">Symptoms</h4>
+              </div>
+              <p class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+                {{ selectedPatient.symptoms }}
+              </p>
             </div>
 
             <!-- Notes -->
             <div>
-              <h4 class="text-sm font-medium text-gray-500">Notes</h4>
-              <p class="mt-1 text-sm text-gray-900">{{ selectedPatient.notes }}</p>
+              <h4 class="text-xl font-medium text-gray-700 mb-2">Notes</h4>
+              <p class="text-lg text-gray-900 bg-gray-50 p-4 rounded-lg">
+                {{ selectedPatient.notes }}
+              </p>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Settings Modal -->
+      <SettingsModal :show="showSettings" @close="showSettings = false" />
     </div>
   </div>
 </template>
 
 <style scoped>
 /* Custom styles can be added here if needed */
+
+textarea {
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+textarea:focus {
+  outline: none;
+}
+
+.settings-icon {
+  transition: transform 0.2s ease;
+}
+
+.settings-icon:hover {
+  transform: rotate(45deg);
+}
+
+/* Google Places Autocomplete custom styles */
+.pac-container {
+  border-radius: 0.375rem;
+  margin-top: 4px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.pac-item {
+  padding: 8px 12px;
+  font-family: inherit;
+}
+
+.pac-item:hover {
+  background-color: #f3f4f6;
+}
+
+.pac-item-selected {
+  background-color: #e5e7eb;
+}
 </style>
