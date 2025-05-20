@@ -49,7 +49,7 @@ npm run build
 - Node.js 16.x or higher
 - npm 7.x or higher
 
-# Party 4 U - Nurse Portal
+# Nurse Portal Auth Setup
 
 ## 🔥 Firebase Emulator Setup
 
