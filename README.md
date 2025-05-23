@@ -1,7 +1,5 @@
 # TriageAI
 
-A Vue.js application for party planning and management.
-
 ## Installation
 
 1. Clone the repository:
