@@ -6,7 +6,7 @@
 
 ```bash
 git clone https://github.com/yourusername/party-4-u.git
-cd party-4-u
+cd TriageAI
 ```
 
 2. Install dependencies:
